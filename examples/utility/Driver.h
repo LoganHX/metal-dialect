@@ -19,6 +19,7 @@
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/TargetParser/Host.h"
+#include <iostream>
 
 #ifndef METAL_DRIVER_H
 #define METAL_DRIVER_H
@@ -53,7 +54,11 @@ public:
 
   mlir::Location &loc() { return *_loc; }
 
-  void addKernel(mlir::metal::KernelOp op) { _metalModule->push_back(op); }
+  void addKernel(mlir::metal::KernelOp op) {
+
+      _metalModule->insert(_metalModule->begin(), op);
+      _metalModule->dump();
+  }
 
   void addOperation(mlir::Operation *op) { _module->push_back(op); }
 
