@@ -10,6 +10,7 @@
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/DialectImplementation.h"
 #include "llvm/ADT/TypeSwitch.h"
+#include <iostream>
 
 using namespace mlir::metal;
 
@@ -43,12 +44,12 @@ mlir::Type MetalMemRefType::parse(mlir::AsmParser &parser) {
 }
 
 void MetalMemRefType::print(mlir::AsmPrinter &printer) const {
-  MetalMemRefType memRef = llvm::cast<MetalMemRefType>(this->getType());
-  auto size = memRef.getSize();
-  printer << "memref<";
+  auto size = this->getSize();
+  printer << "<";
   if (size > 0)
     printer << size;
   else
     printer << "?";
-  printer << " x " << memRef.getType() << ">";
+  printer << " x " << this->getType() << ">";
+
 }
