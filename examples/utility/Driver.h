@@ -57,7 +57,7 @@ public:
   void addKernel(mlir::metal::KernelOp op) {
 
       _metalModule->insert(_metalModule->begin(), op);
-      _metalModule->dump();
+      //_metalModule->dump();
   }
 
   void addOperation(mlir::Operation *op) { _module->push_back(op); }
