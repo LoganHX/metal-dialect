@@ -126,7 +126,6 @@ public:
     auto llvmModule =
         mlir::translateModuleToLLVMIR(*_module, *this->_llvmContext);
     if (!llvmModule) {
-      std::cout << "\n\nStan Beeman!\n\n";
       exit(EXIT_FAILURE);
     }
 
