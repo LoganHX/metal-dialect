@@ -20,6 +20,11 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/TargetParser/Host.h"
 #include <iostream>
+#include "mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"
+#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
+
+
+
 
 #ifndef METAL_DRIVER_H
 #define METAL_DRIVER_H
@@ -56,8 +61,8 @@ public:
 
   void addKernel(mlir::metal::KernelOp op) {
 
-      _metalModule->insert(_metalModule->begin(), op);
-      //_metalModule->dump();
+    _metalModule->insert(_metalModule->begin(), op);
+    //_metalModule->dump();
   }
 
   void addOperation(mlir::Operation *op) { _module->push_back(op); }
@@ -108,14 +113,19 @@ public:
   }
 
   void translateToLLVM() {
+    mlir::registerBuiltinDialectTranslation(*(_module)->getContext()); //TODO è questo il posto più opportuno in cui lasciare questa istruzione?
+    mlir::registerLLVMDialectTranslation(*(_module)->getContext()); //TODO è questo il posto più opportuno in cui lasciare questa istruzione?
+
     _pm->addPass(mlir::metal::createConvertMetalToLLVM());
     if (mlir::failed(_pm->run(*_module)))
       exit(EXIT_FAILURE);
 
     auto llvmModule =
         mlir::translateModuleToLLVMIR(*_module, *this->_llvmContext);
-    if (!llvmModule)
+    if (!llvmModule) {
+      std::cout << "\n\nStan Beeman!\n\n";
       exit(EXIT_FAILURE);
+    }
 
     llvm::StringRef objectFilePath = "./main.o";
     genObjectFile(llvmModule, objectFilePath);
