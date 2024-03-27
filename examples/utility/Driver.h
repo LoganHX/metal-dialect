@@ -51,6 +51,11 @@ public:
     this->_metalModule = std::make_unique<mlir::metal::ModuleOp>(
         _builder->create<mlir::metal::ModuleOp>(*_loc));
     _module->push_back(*_metalModule);
+
+    /* Registrazioni per la traduzione */
+    mlir::registerBuiltinDialectTranslation(*(_module)->getContext()); //TODO è questo il posto più opportuno in cui lasciare questa istruzione?
+    mlir::registerLLVMDialectTranslation(*(_module)->getContext()); //TODO è questo il posto più opportuno in cui lasciare questa istruzione?
+
   }
 
   void dump() { _module->dump(); }
@@ -113,8 +118,6 @@ public:
   }
 
   void translateToLLVM() {
-    mlir::registerBuiltinDialectTranslation(*(_module)->getContext()); //TODO è questo il posto più opportuno in cui lasciare questa istruzione?
-    mlir::registerLLVMDialectTranslation(*(_module)->getContext()); //TODO è questo il posto più opportuno in cui lasciare questa istruzione?
 
     _pm->addPass(mlir::metal::createConvertMetalToLLVM());
     if (mlir::failed(_pm->run(*_module)))
