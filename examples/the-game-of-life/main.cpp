@@ -500,8 +500,9 @@ int main() {
   driver.addOperation(
       createExecuteKernel(driver.builder(), driver.loc(), putcharF));
   driver.verify();
+  //driver.dump();
+  driver.canonicalize();
+  driver.translateToMSL();
+  driver.translateToLLVM();
   driver.dump();
-  //  driver.canonicalize();
-  //  driver.translateToMSL();
-  //  driver.translateToLLVM();
 }
