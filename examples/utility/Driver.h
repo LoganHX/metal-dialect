@@ -26,8 +26,8 @@
 
 
 
-#ifndef METAL_DRIVER_H
-#define METAL_DRIVER_H
+#pragma once
+
 
 class Driver {
 public:
@@ -194,4 +194,3 @@ private:
   }
 };
 
-#endif // METAL_DRIVER_H

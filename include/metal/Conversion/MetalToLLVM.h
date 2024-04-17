@@ -5,8 +5,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef METAL_METALTOLLVM_H
-#define METAL_METALTOLLVM_H
+#pragma once
+
 
 #include <memory>
 
@@ -22,4 +22,3 @@ void populateMetalToLLVMConversionPatterns(RewritePatternSet &patterns,
 } // end namespace metal
 } // end namespace mlir
 
-#endif // METAL_METALTOLLVM_H

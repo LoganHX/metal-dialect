@@ -5,8 +5,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef METAL_MODULETRANSLATION_H
-#define METAL_MODULETRANSLATION_H
+#pragma once
+
 
 #include "metal/IR/MetalOps.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -67,4 +67,3 @@ private:
 } // end namespace metal
 } // end namespace mlir
 
-#endif // METAL_MODULETRANSLATION_H

@@ -5,12 +5,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef METAL_METALTYPES_H
-#define METAL_METALTYPES_H
+#pragma once
+
 
 #include "mlir/IR/BuiltinTypes.h"
 
 #define GET_TYPEDEF_CLASSES
 #include "metal/IR/MetalOpsTypes.h.inc"
 
-#endif // METAL_METALTYPES_H

@@ -5,8 +5,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef METAL_METALSHADINGLANGUAGE_H
-#define METAL_METALSHADINGLANGUAGE_H
+#pragma once
+
 
 #include "mlir/Support/LogicalResult.h"
 
@@ -20,4 +20,3 @@ mlir::LogicalResult translateModuleToMetalShadingLanguage(mlir::ModuleOp m,
 } // end namespace metal
 } // end namespace mlir
 
-#endif // METAL_METALSHADINGLANGUAGE_H

@@ -5,8 +5,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef METAL_C_DIALECTS_H
-#define METAL_C_DIALECTS_H
+#pragma once
 
 #include "mlir-c/IR.h"
 
@@ -19,5 +18,3 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Metal, metal);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // METAL_C_DIALECTS_H

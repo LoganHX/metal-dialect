@@ -5,8 +5,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef METAL_METALPASSES_H
-#define METAL_METALPASSES_H
+#pragma once
 
 #include "metal/IR/MetalDialect.h"
 #include "metal/IR/MetalOps.h"
@@ -23,4 +22,3 @@ namespace metal {
 } // namespace metal
 } // namespace mlir
 
-#endif // METAL_METALPASSES_H

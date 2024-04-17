@@ -5,8 +5,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef METAL_METALOPS_H
-#define METAL_METALOPS_H
+#pragma once
+
 
 #include "mlir/IR/BuiltinAttributes.h"
 
@@ -18,5 +18,3 @@
 
 #define GET_OP_CLASSES
 #include "metal/IR/MetalOps.h.inc"
-
-#endif // METAL_METALOPS_H
