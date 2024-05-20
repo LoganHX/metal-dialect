@@ -8,6 +8,12 @@ add_mlir_dialect_library(MLIRMetal
 		Conversion/ConvertMetalToLLVM.cpp
 		Conversion/MetalToLLVM.cpp
 
+		# Conversion
+		${LIB_HEADERS}/Conversion/MetalPasses.h
+		${LIB_HEADERS}/Conversion/ScfToMetal.h
+		Conversion/ConvertScfToMetal.cpp
+		Conversion/ScfToMetal.cpp
+
 		# IR
 		${LIB_HEADERS}/IR/MetalDialect.h
 		IR/MetalDialect.cpp
