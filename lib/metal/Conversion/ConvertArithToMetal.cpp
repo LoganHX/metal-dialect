@@ -1,5 +1,5 @@
 #include "metal/Conversion/MetalPasses.h"
-#include "metal/Conversion/ScfToMetal.h"
+#include "metal/Conversion/ArithToMetal.h" //TODO modifica questo include
 #include "mlir/Conversion/ArithToLLVM/ArithToLLVM.h"
 #include "mlir/Conversion/ControlFlowToLLVM/ControlFlowToLLVM.h"
 #include "mlir/Conversion/FuncToLLVM/ConvertFuncToLLVM.h"
@@ -12,29 +12,29 @@
 
 namespace mlir::metal {
 
-#define GEN_PASS_DEF_CONVERTSCFTOMETAL
+#define GEN_PASS_DEF_CONVERTARITHTOMETAL //TODO modifica questo define
 #include "metal/Conversion/MetalPasses.h.inc"
 
 namespace {
-struct ConvertScfToMetal
-    : public impl::ConvertScfToMetalBase<ConvertScfToMetal> {
+struct ConvertArithToMetal
+    : public impl::ConvertArithToMetalBase<ConvertArithToMetal> {
 
-  using impl::ConvertScfToMetalBase<
-      ConvertScfToMetal>::ConvertScfToMetalBase;
+  using impl::ConvertArithToMetalBase<
+      ConvertArithToMetal>::ConvertArithToMetalBase;
 
   void runOnOperation() final {
     ConversionTarget target(getContext());
     
     
     target.addLegalDialect<MetalDialect>();
-    target.addIllegalDialect<scf::SCFDialect>();
+    target.addIllegalDialect<arith::ArithDialect>();
 
     //target.addLegalDialect<arith::ArithDialect>();
 
 
     
     RewritePatternSet patterns(&getContext());
-    mlir::metal::populateScfToMetalConversionPatterns(patterns, &getContext());
+    mlir::metal::populateArithToMetalConversionPatterns(patterns, &getContext());
 
     FrozenRewritePatternSet patternSet(std::move(patterns));
     if (failed(applyPartialConversion(getOperation(), target, patternSet)))

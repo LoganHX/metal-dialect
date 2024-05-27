@@ -16,7 +16,12 @@ def ConvertMetalToLLVM : Pass<"convert-metal-to-llvm"> {
 }
 
 def ConvertScfToMetal : Pass<"convert-scf-to-metal"> {
-  let summary = "Converts (most of) scf operations in operations of the metal dialect";
+  let summary = "Converts (most of) SCF operations in operations of the metal dialect";
+  let dependentDialects = ["mlir::metal::MetalDialect"];
+}
+
+def ConvertArithToMetal : Pass<"convert-arith-to-metal"> {
+  let summary = "Converts (most of) Arith operations in operations of the metal dialect";
   let dependentDialects = ["mlir::metal::MetalDialect"];
 }
 

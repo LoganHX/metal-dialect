@@ -5,7 +5,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "metal/Conversion/ScfToMetal.h"
+#include "metal/Conversion/ArithToMetal.h"
 #include "metal/IR/MetalOps.h"
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
@@ -26,34 +26,26 @@ namespace {
 
 using namespace mlir;
 
-// class ScfToMetalTypeConverter : public mlir::TypeConverter {
-// public:
-//   ScfToMetalTypeConverter() {
-//     addConversion([](mlir::metal::MetalMemRefType type) {
-//       return mlir::MemRefType::get(type.getSize(), type.getType());
-//     });
-//   }
-// };
-
-
-struct ConvertWhile : public OpConversionPattern<mlir::scf::WhileOp> {
-  ConvertWhile(mlir::MLIRContext *context)
-      : OpConversionPattern<mlir::scf::WhileOp>(context) {}
+struct ConvertConstant : public OpConversionPattern<mlir::arith::ConstantOp> {
+  ConvertConstant(mlir::MLIRContext *context)
+      : OpConversionPattern<mlir::arith::ConstantOp>(context) {}
 
   using OpConversionPattern::OpConversionPattern;
 
   LogicalResult
-  matchAndRewrite(mlir::scf::WhileOp op, OpAdaptor adaptor,
+  matchAndRewrite(arith::ConstantOp arithConst,
+                  arith::ConstantOp::Adaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    rewriter.replaceOp(op, op);
+    rewriter.replaceOpWithNewOp<mlir::metal::ConstantOp>(
+        arithConst, arithConst.getType(), adaptor.getValue());
     return success();
   }
 };
 } // end namespace
 
-void mlir::metal::populateScfToMetalConversionPatterns(
+void mlir::metal::populateArithToMetalConversionPatterns(
     RewritePatternSet &patterns, MLIRContext *ctx) {
 
-  patterns.insert<ConvertWhile>(ctx);
+  patterns.insert<ConvertConstant>(ctx);
 }

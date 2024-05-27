@@ -14,6 +14,12 @@ add_mlir_dialect_library(MLIRMetal
 		Conversion/ConvertScfToMetal.cpp
 		Conversion/ScfToMetal.cpp
 
+		# Conversion
+		${LIB_HEADERS}/Conversion/MetalPasses.h
+		${LIB_HEADERS}/Conversion/ArithToMetal.h
+		Conversion/ConvertArithToMetal.cpp
+		Conversion/ArithToMetal.cpp
+
 		# IR
 		${LIB_HEADERS}/IR/MetalDialect.h
 		IR/MetalDialect.cpp
