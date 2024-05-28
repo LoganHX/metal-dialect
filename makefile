@@ -55,7 +55,6 @@ format:
 
 .PHONY: llvm-all
 llvm-all: 	llvm-clone \
-			llvm-checkout \
 			llvm-generate-python-env \
 			llvm-generate-project \
 			llvm-build
