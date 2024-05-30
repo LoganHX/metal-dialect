@@ -40,6 +40,6 @@ namespace mlir::metal {
 
 int main(int argc, char **argv) {
 
-  mlir::metal::registerMetalToCppTranslation();
+  mlir::metal::registerToMetalTranslation();
   return failed(mlir::mlirTranslateMain(argc, argv, "MLIR Translation Testing Tool"));
 }

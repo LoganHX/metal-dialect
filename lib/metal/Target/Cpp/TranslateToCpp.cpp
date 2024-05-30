@@ -1638,7 +1638,7 @@ LogicalResult CppEmitter::emitTupleType(Location loc, ArrayRef<Type> types) {
   return success();
 }
 
-LogicalResult mlir::metal::translateMetalToCpp(Operation *op, raw_ostream &os,
+LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
                                     bool declareVariablesAtTop) {
   CppEmitter emitter(os, declareVariablesAtTop);
   return emitter.emitOperation(*op, /*trailingSemicolon=*/false);

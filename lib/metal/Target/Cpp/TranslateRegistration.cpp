@@ -28,7 +28,7 @@ namespace mlir {
 // Cpp registration
 //===----------------------------------------------------------------------===//
 
-void registerMetalToCppTranslation() {
+void registerToMetalTranslation() {
   static llvm::cl::opt<bool> declareVariablesAtTop(
       "declare-variables-at-top",
       llvm::cl::desc("Declare variables at top when emitting C/C++"),
@@ -37,7 +37,7 @@ void registerMetalToCppTranslation() {
   TranslateFromMLIRRegistration reg(
       "mlir-to-cpp", "translate from mlir to cpp",
       [](Operation *op, raw_ostream &output) {
-        return translateMetalToCpp(
+        return translateToMetal(
             op, output,
             /*declareVariablesAtTop=*/declareVariablesAtTop);
       },

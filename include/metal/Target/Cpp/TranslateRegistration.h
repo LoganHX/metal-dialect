@@ -19,7 +19,7 @@ namespace mlir {
 // Cpp registration
 //===----------------------------------------------------------------------===//
 
-void registerMetalToCppTranslation();
+void registerToMetalTranslation();
 
 } // namespace metal
 } // namespace mlir

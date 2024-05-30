@@ -24,7 +24,7 @@ namespace metal {
 /// the region of 'op' need almost all be in EmitC dialect. The parameter
 /// 'declareVariablesAtTop' enforces that all variables for op results and block
 /// arguments are declared at the beginning of the function.
-LogicalResult translateMetalToCpp(Operation *op, raw_ostream &os,
+LogicalResult translateToMetal(Operation *op, raw_ostream &os,
                              bool declareVariablesAtTop = false);
 } // namespace emitc
 } // namespace mlir
