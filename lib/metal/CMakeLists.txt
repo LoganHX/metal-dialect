@@ -1,5 +1,7 @@
 set(LIB_HEADERS  ${PROJECT_SOURCE_DIR}/include/metal)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
+add_subdirectory(Target)
+
 
 add_mlir_dialect_library(MLIRMetal
 		# Conversion
