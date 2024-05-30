@@ -11,13 +11,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mlir/InitAllTranslations.h"
 #include "mlir/Support/LogicalResult.h"
-#include "Tools/mlir-translate/MlirTranslateMain.h"
+#include "mlir/Tools/mlir-translate/MlirTranslateMain.h"
+#include "metal/Target/Cpp/TranslateRegistration.h"
+
+#include <iostream>
 
 using namespace mlir;
 
-namespace mlir {
+namespace mlir::metal {
 // // Defined in the test directory, no public header.
 // void registerTestRoundtripSPIRV();
 // void registerTestRoundtripDebugSPIRV();
@@ -37,6 +39,7 @@ namespace mlir {
 }
 
 int main(int argc, char **argv) {
-  registerToCppTranslation();
-  return failed(mlirTranslateMain(argc, argv, "MLIR Translation Testing Tool"));
+
+  mlir::metal::registerMetalToCppTranslation();
+  return failed(mlir::mlirTranslateMain(argc, argv, "MLIR Translation Testing Tool"));
 }

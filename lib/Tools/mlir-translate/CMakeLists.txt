@@ -3,7 +3,7 @@
   Translation.cpp
 
   ADDITIONAL_HEADER_DIRS
-  ${METAL_SOURCE_DIR}/Tools/mlir-translate
+  ${MLIR_MAIN_INCLUDE_DIR}/mlir/Tools/mlir-translate
 
   LINK_LIBS PUBLIC
   MLIRIR

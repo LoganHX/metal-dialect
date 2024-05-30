@@ -18,13 +18,13 @@
 namespace mlir {
 struct LogicalResult;
 class Operation;
-namespace emitc {
+namespace metal {
 
 /// Translates the given operation to C++ code. The operation or operations in
 /// the region of 'op' need almost all be in EmitC dialect. The parameter
 /// 'declareVariablesAtTop' enforces that all variables for op results and block
 /// arguments are declared at the beginning of the function.
-LogicalResult translateToCpp(Operation *op, raw_ostream &os,
+LogicalResult translateMetalToCpp(Operation *op, raw_ostream &os,
                              bool declareVariablesAtTop = false);
 } // namespace emitc
 } // namespace mlir

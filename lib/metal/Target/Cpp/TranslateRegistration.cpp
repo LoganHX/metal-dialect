@@ -12,19 +12,23 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 
+#include <iostream>
+
 #include "metal/Target/Cpp/CppEmitter.h"
-#include "Tools/mlir-translate/Translation.h"
+#include "mlir/Tools/mlir-translate/Translation.h"
+#include "metal/Target/Cpp/TranslateRegistration.h"
 #include "llvm/Support/CommandLine.h"
 
 using namespace mlir;
 
 namespace mlir {
+  namespace metal {
 
 //===----------------------------------------------------------------------===//
 // Cpp registration
 //===----------------------------------------------------------------------===//
 
-void registerToCppTranslation() {
+void registerMetalToCppTranslation() {
   static llvm::cl::opt<bool> declareVariablesAtTop(
       "declare-variables-at-top",
       llvm::cl::desc("Declare variables at top when emitting C/C++"),
@@ -33,7 +37,7 @@ void registerToCppTranslation() {
   TranslateFromMLIRRegistration reg(
       "mlir-to-cpp", "translate from mlir to cpp",
       [](Operation *op, raw_ostream &output) {
-        return emitc::translateToCpp(
+        return translateMetalToCpp(
             op, output,
             /*declareVariablesAtTop=*/declareVariablesAtTop);
       },
@@ -45,5 +49,5 @@ void registerToCppTranslation() {
         // clang-format on
       });
 }
-
+} // namespace metal
 } // namespace mlir

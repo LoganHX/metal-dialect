@@ -26,6 +26,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FormatVariadic.h"
 #include <stack>
+#include <iostream>
 #include <utility>
 
 #define DEBUG_TYPE "translate-to-cpp"
@@ -1637,7 +1638,7 @@ LogicalResult CppEmitter::emitTupleType(Location loc, ArrayRef<Type> types) {
   return success();
 }
 
-LogicalResult emitc::translateToCpp(Operation *op, raw_ostream &os,
+LogicalResult mlir::metal::translateMetalToCpp(Operation *op, raw_ostream &os,
                                     bool declareVariablesAtTop) {
   CppEmitter emitter(os, declareVariablesAtTop);
   return emitter.emitOperation(*op, /*trailingSemicolon=*/false);
