@@ -83,71 +83,71 @@ def ReturnOp : Metal_Op<"return", [Pure, Terminator]> {
 // ConstantOp
 //===----------------------------------------------------------------------===//
 
-def ConstantOp : Metal_Op<"constant", [ConstantLike, Pure, AllTypesMatch<["value", "result"]>,]> {
-  let summary = "Constant operation";
+// def ConstantOp : Metal_Op<"constant", [ConstantLike, Pure, AllTypesMatch<["value", "result"]>,]> {
+//   let summary = "Constant operation";
 
-  let arguments = (ins TypedAttrInterface:$value);
-  let results = (outs Metal_Type:$result);
+//   let arguments = (ins TypedAttrInterface:$value);
+//   let results = (outs Metal_Type:$result);
 
-  let builders = [
-    OpBuilder<(ins "TypedAttr":$attr)>
-  ];
+//   let builders = [
+//     OpBuilder<(ins "TypedAttr":$attr)>
+//   ];
 
-  let hasFolder = 1;
+//   let hasFolder = 1;
 
-  let assemblyFormat = "$value attr-dict";
-}
+//   let assemblyFormat = "$value attr-dict";
+// }
 
 //===----------------------------------------------------------------------===//
 // AllocaOp
 //===----------------------------------------------------------------------===//
 
-def AllocaOp : Metal_Op<"alloca"> {
-  let summary = "Alloca operation";
+// def AllocaOp : Metal_Op<"alloca"> {
+//   let summary = "Alloca operation";
 
-  let results = (outs Metal_MemRefType);
+//   let results = (outs Metal_MemRefType);
 
-  let builders = [
-    OpBuilder<(ins "MetalMemRefType":$type), [{
-      $_state.addTypes(type);
-    }]>
-  ];
+//   let builders = [
+//     OpBuilder<(ins "MetalMemRefType":$type), [{
+//       $_state.addTypes(type);
+//     }]>
+//   ];
 
-  let hasVerifier = 1;
+//   let hasVerifier = 1;
 
-  let assemblyFormat = "attr-dict `:` type(results)";
-}
+//   let assemblyFormat = "attr-dict `:` type(results)";
+// }
 
 //===----------------------------------------------------------------------===//
 // StoreOp
 //===----------------------------------------------------------------------===//
 
-def StoreOp : Metal_Op<"store"> {
-  let summary = "Store operation";
+// def StoreOp : Metal_Op<"store"> {
+//   let summary = "Store operation";
 
-  let arguments = (ins Metal_Type:$value, Metal_MemRefType:$memref, UI32:$index);
+//   let arguments = (ins Metal_Type:$value, Metal_MemRefType:$memref, UI32:$index);
 
-  let hasVerifier = 1;
+//   let hasVerifier = 1;
 
-  let assemblyFormat = "$value `,` $memref `[` $index `]`  attr-dict `:` type(operands)";
-}
+//   let assemblyFormat = "$value `,` $memref `[` $index `]`  attr-dict `:` type(operands)";
+// }
 
 //===----------------------------------------------------------------------===//
 // GetElementOp
 //===----------------------------------------------------------------------===//
 
-def GetElementOp : Metal_Op<"get_element", [Pure]> {
-  let summary = "Get element operation";
+// def GetElementOp : Metal_Op<"get_element", [Pure]> {
+//   let summary = "Get element operation";
 
-  let arguments = (ins Metal_MemRefType:$memref, UI32:$index);
-  let results = (outs Metal_Type:$result);
+//   let arguments = (ins Metal_MemRefType:$memref, UI32:$index);
+//   let results = (outs Metal_Type:$result);
 
-  let builders = [OpBuilder<(ins "Value":$memref, "Value":$index)>];
+//   let builders = [OpBuilder<(ins "Value":$memref, "Value":$index)>];
 
-  let hasVerifier = 1;
+//   let hasVerifier = 1;
 
-  let assemblyFormat = "$memref `[` $index `]`  attr-dict `:` functional-type(operands, results)";
-}
+//   let assemblyFormat = "$memref `[` $index `]`  attr-dict `:` functional-type(operands, results)";
+// }
 
 //===----------------------------------------------------------------------===//
 // ThreadIdOp
@@ -170,152 +170,152 @@ def ThreadIdOp : Metal_Op<"thread_id", [Pure]> {
 // CastOp
 //===----------------------------------------------------------------------===//
 
-def CastOp : Metal_Op<"cast", [Pure]> {
-  let summary = "Cast operation";
+// def CastOp : Metal_Op<"cast", [Pure]> {
+//   let summary = "Cast operation";
 
-  let arguments = (ins Metal_Type:$argument);
-  let results = (outs Metal_Type);
+//   let arguments = (ins Metal_Type:$argument);
+//   let results = (outs Metal_Type);
 
-  let assemblyFormat = "$argument  attr-dict `:` functional-type(operands, results)";
-}
+//   let assemblyFormat = "$argument  attr-dict `:` functional-type(operands, results)";
+// }
 
 //===----------------------------------------------------------------------===//
 // UnaryExpOp
 //===----------------------------------------------------------------------===//
 
-def UnaryExpOperatorNot : I64EnumAttrCase<"notOp", 0>;
-def UnaryExpOperatorMinus : I64EnumAttrCase<"minusOp", 1>;
+// def UnaryExpOperatorNot : I64EnumAttrCase<"notOp", 0>;
+// def UnaryExpOperatorMinus : I64EnumAttrCase<"minusOp", 1>;
 
-def UnaryExpOperator : I64EnumAttr<
-    "UnaryExpOperator", "",
-    [UnaryExpOperatorNot, UnaryExpOperatorMinus]> {
-  let cppNamespace = "mlir::metal";
-}
+// def UnaryExpOperator : I64EnumAttr<
+//     "UnaryExpOperator", "",
+//     [UnaryExpOperatorNot, UnaryExpOperatorMinus]> {
+//   let cppNamespace = "mlir::metal";
+// }
 
-def UnaryExpOp : Metal_Op<"unary_exp", [Pure]> {
-  let summary = "Unary expression operation";
+// def UnaryExpOp : Metal_Op<"unary_exp", [Pure]> {
+//   let summary = "Unary expression operation";
 
-  let arguments = (ins UnaryExpOperator:$unaryOperator, Metal_Type:$argument);
-  let results = (outs Metal_Type);
+//   let arguments = (ins UnaryExpOperator:$unaryOperator, Metal_Type:$argument);
+//   let results = (outs Metal_Type);
 
-  let builders = [
-    OpBuilder<(ins "UnaryExpOperator":$unaryOperator, "Value":$argument)>
-  ];
+//   let builders = [
+//     OpBuilder<(ins "UnaryExpOperator":$unaryOperator, "Value":$argument)>
+//   ];
 
-  let hasVerifier = 1;
+//   let hasVerifier = 1;
 
-  let assemblyFormat = "$argument `,` $unaryOperator attr-dict `:` functional-type(operands, results)";
+//   let assemblyFormat = "$argument `,` $unaryOperator attr-dict `:` functional-type(operands, results)";
 
-  let hasFolder = 1;
-}
+//   let hasFolder = 1;
+// }
 
 //===----------------------------------------------------------------------===//
 // BinaryExpOp
 //===----------------------------------------------------------------------===//
 
-def BinaryExpOperatorAdd : I64EnumAttrCase<"addOp", 0>;
-def BinaryExpOperatorSub : I64EnumAttrCase<"subOp", 1>;
-def BinaryExpOperatorMul : I64EnumAttrCase<"mulOp", 2>;
-def BinaryExpOperatorDiv : I64EnumAttrCase<"divOp", 3>;
-def BinaryExpOperatorRem : I64EnumAttrCase<"remOp", 4>;
-def BinaryExpOperatorEq  : I64EnumAttrCase<"eqOp", 5>;
-def BinaryExpOperatorNe  : I64EnumAttrCase<"neOp", 6>;
-def BinaryExpOperatorLt : I64EnumAttrCase<"ltOp", 7>;
-def BinaryExpOperatorLe : I64EnumAttrCase<"leOp", 8>;
-def BinaryExpOperatorGt : I64EnumAttrCase<"gtOp", 9>;
-def BinaryExpOperatorGe : I64EnumAttrCase<"geOp", 10>;
-def BinaryExpOperatorAnd : I64EnumAttrCase<"andOp", 11>;
-def BinaryExpOperatorOr : I64EnumAttrCase<"orOp", 12>;
+// def BinaryExpOperatorAdd : I64EnumAttrCase<"addOp", 0>;
+// def BinaryExpOperatorSub : I64EnumAttrCase<"subOp", 1>;
+// def BinaryExpOperatorMul : I64EnumAttrCase<"mulOp", 2>;
+// def BinaryExpOperatorDiv : I64EnumAttrCase<"divOp", 3>;
+// def BinaryExpOperatorRem : I64EnumAttrCase<"remOp", 4>;
+// def BinaryExpOperatorEq  : I64EnumAttrCase<"eqOp", 5>;
+// def BinaryExpOperatorNe  : I64EnumAttrCase<"neOp", 6>;
+// def BinaryExpOperatorLt : I64EnumAttrCase<"ltOp", 7>;
+// def BinaryExpOperatorLe : I64EnumAttrCase<"leOp", 8>;
+// def BinaryExpOperatorGt : I64EnumAttrCase<"gtOp", 9>;
+// def BinaryExpOperatorGe : I64EnumAttrCase<"geOp", 10>;
+// def BinaryExpOperatorAnd : I64EnumAttrCase<"andOp", 11>;
+// def BinaryExpOperatorOr : I64EnumAttrCase<"orOp", 12>;
 
-def BinaryExpOperator : I64EnumAttr<
-    "BinaryExpOperator", "",
-    [BinaryExpOperatorAdd,
-     BinaryExpOperatorSub,
-     BinaryExpOperatorMul,
-     BinaryExpOperatorDiv,
-     BinaryExpOperatorRem,
-     BinaryExpOperatorEq,
-     BinaryExpOperatorNe,
-     BinaryExpOperatorLt,
-     BinaryExpOperatorLe,
-     BinaryExpOperatorGt,
-     BinaryExpOperatorGe,
-     BinaryExpOperatorAnd,
-     BinaryExpOperatorOr]> {
-  let cppNamespace = "mlir::metal";
-}
+// def BinaryExpOperator : I64EnumAttr<
+//     "BinaryExpOperator", "",
+//     [BinaryExpOperatorAdd,
+//      BinaryExpOperatorSub,
+//      BinaryExpOperatorMul,
+//      BinaryExpOperatorDiv,
+//      BinaryExpOperatorRem,
+//      BinaryExpOperatorEq,
+//      BinaryExpOperatorNe,
+//      BinaryExpOperatorLt,
+//      BinaryExpOperatorLe,
+//      BinaryExpOperatorGt,
+//      BinaryExpOperatorGe,
+//      BinaryExpOperatorAnd,
+//      BinaryExpOperatorOr]> {
+//   let cppNamespace = "mlir::metal";
+// }
 
-def BinaryExpOp : Metal_Op<"binary_exp", [Pure]> {
-  let summary = "Binary expression operation";
+// def BinaryExpOp : Metal_Op<"binary_exp", [Pure]> {
+//   let summary = "Binary expression operation";
 
-  let arguments = (ins BinaryExpOperator:$binaryOperator, Metal_Type:$lhs, Metal_Type:$rhs);
-  let results = (outs Metal_Type);
+//   let arguments = (ins BinaryExpOperator:$binaryOperator, Metal_Type:$lhs, Metal_Type:$rhs);
+//   let results = (outs Metal_Type);
 
-  let builders = [
-    OpBuilder<(ins "BinaryExpOperator":$binaryOperator, "Value":$lhs, "Value":$rhs)>
-  ];
+//   let builders = [
+//     OpBuilder<(ins "BinaryExpOperator":$binaryOperator, "Value":$lhs, "Value":$rhs)>
+//   ];
 
-  let hasVerifier = 1;
+//   let hasVerifier = 1;
 
-  let assemblyFormat = "$lhs `,` $rhs `,` $binaryOperator  attr-dict `:` functional-type(operands, results)";
-}
+//   let assemblyFormat = "$lhs `,` $rhs `,` $binaryOperator  attr-dict `:` functional-type(operands, results)";
+// }
 
 //===----------------------------------------------------------------------===//
 // YieldOp
 //===----------------------------------------------------------------------===//
 
-def YieldOp : Metal_Op<"yield", [Pure, Terminator]> {
-  let summary = "Yield operation";
+// def YieldOp : Metal_Op<"yield", [Pure, Terminator]> {
+//   let summary = "Yield operation";
 
-  let assemblyFormat = "attr-dict";
-}
+//   let assemblyFormat = "attr-dict";
+// }
 
 //===----------------------------------------------------------------------===//
 // IfOp
 //===----------------------------------------------------------------------===//
 
-def IfOp : Metal_Op<"if", [RecursiveMemoryEffects, NoRegionArguments]> {
-  let summary = "If-then-else operation";
+// def IfOp : Metal_Op<"if", [RecursiveMemoryEffects, NoRegionArguments]> {
+//   let summary = "If-then-else operation";
 
-  let arguments = (ins I1:$condition);
+//   let arguments = (ins I1:$condition);
 
-  let regions = (region SizedRegion<1>:$thenRegion, AnyRegion:$elseRegion);
+//   let regions = (region SizedRegion<1>:$thenRegion, AnyRegion:$elseRegion);
 
-  let builders = [
-    OpBuilder<(ins "Value":$cond, "function_ref<void(OpBuilder &, Location)>":$thenBuilder,
-               CArg<"function_ref<void(OpBuilder &, Location)>", "nullptr">:$elseBuilder)>
-  ];
+//   let builders = [
+//     OpBuilder<(ins "Value":$cond, "function_ref<void(OpBuilder &, Location)>":$thenBuilder,
+//                CArg<"function_ref<void(OpBuilder &, Location)>", "nullptr">:$elseBuilder)>
+//   ];
 
-  let hasCustomAssemblyFormat = 1;
-}
+//   let hasCustomAssemblyFormat = 1;
+// }
 
 //===----------------------------------------------------------------------===//
 // WhileOp
 //===----------------------------------------------------------------------===//
 
-def WhileOp : Metal_Op<"while", [RecursiveMemoryEffects, NoRegionArguments]> {
-  let summary = "While operation";
+// def WhileOp : Metal_Op<"while", [RecursiveMemoryEffects, NoRegionArguments]> {
+//   let summary = "While operation";
 
-  let regions = (region SizedRegion<1>:$conditionRegion, SizedRegion<1>:$bodyRegion);
+//   let regions = (region SizedRegion<1>:$conditionRegion, SizedRegion<1>:$bodyRegion);
 
-  let builders = [
-    OpBuilder<(ins "function_ref<void(OpBuilder &, Location)>":$conditionBuilder,
-                      "function_ref<void(OpBuilder &, Location)>":$bodyBuilder)>
-  ];
+//   let builders = [
+//     OpBuilder<(ins "function_ref<void(OpBuilder &, Location)>":$conditionBuilder,
+//                       "function_ref<void(OpBuilder &, Location)>":$bodyBuilder)>
+//   ];
 
-  let hasVerifier = 1;
+//   let hasVerifier = 1;
 
-  let hasCustomAssemblyFormat = 1;
-}
+//   let hasCustomAssemblyFormat = 1;
+// }
 
-def YieldWhileOp : Metal_Op<"while_yield", [Pure, Terminator,
-                                            HasParent<"WhileOp">]> {
-  let summary = "Yield while operation";
+// def YieldWhileOp : Metal_Op<"while_yield", [Pure, Terminator,
+//                                             HasParent<"WhileOp">]> {
+//   let summary = "Yield while operation";
 
-  let arguments = (ins I1:$condition);
+//   let arguments = (ins I1:$condition);
 
-  let assemblyFormat = "$condition attr-dict ";
-}
+//   let assemblyFormat = "$condition attr-dict ";
+// }
 
 
 //===----------------------------------------------------------------------===//

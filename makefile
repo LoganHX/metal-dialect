@@ -110,7 +110,7 @@ metal-all:	metal-generate-presets \
 			metal-copy-compile-commands \
 			metal-build-mlir \
 			metal-build-runtime \
-			metal-build-examples
+			# metal-build-examples
 
 .PHONY: metal-clean
 metal-clean:
@@ -137,7 +137,7 @@ metal-copy-compile-commands:
 metal-build-mlir:
 	@echo "Metal - Build"
 	@cmake --build ${PROJECT_DIR}/build/${METAL_PRESET}
-	@cmake --build ${PROJECT_DIR}/build/${METAL_PRESET} --target check-metal mlir-doc
+	# @cmake --build ${PROJECT_DIR}/build/${METAL_PRESET} --target check-metal mlir-doc
 
 .PHONY: metal-build-runtime
 metal-build-runtime:

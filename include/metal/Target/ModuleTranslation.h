@@ -47,21 +47,21 @@ private:
 
   bool isStatementPrintable(Operation *opInst);
   void translateStatement(Operation *opInst);
-  void translate(mlir::metal::AllocaOp op);
-  void translate(mlir::metal::StoreOp op);
-  void translate(mlir::metal::IfOp op);
-  void translate(mlir::metal::WhileOp op);
-  void translate(mlir::metal::ReturnOp op);
-  void translate(mlir::Region &region);
+  // void translate(mlir::metal::AllocaOp op);
+  // void translate(mlir::metal::StoreOp op);
+  // void translate(mlir::metal::IfOp op);
+  // void translate(mlir::metal::WhileOp op);
+  // void translate(mlir::metal::ReturnOp op);
+  // void translate(mlir::Region &region);
 
-  void translateValue(Operation *opInst);
-  void translate(mlir::metal::ConstantOp op);
-  void translate(mlir::metal::GetElementOp op);
-  void translate(mlir::metal::ThreadIdOp op);
-  void translate(mlir::metal::CastOp op);
-  void translate(mlir::metal::UnaryExpOp op);
-  void translate(mlir::metal::BinaryExpOp op);
-  void translate(mlir::metal::YieldWhileOp op);
+  // void translateValue(Operation *opInst);
+  // void translate(mlir::metal::ConstantOp op);
+  // void translate(mlir::metal::GetElementOp op);
+  // void translate(mlir::metal::ThreadIdOp op);
+  // void translate(mlir::metal::CastOp op);
+  // void translate(mlir::metal::UnaryExpOp op);
+  // void translate(mlir::metal::BinaryExpOp op);
+  // void translate(mlir::metal::YieldWhileOp op);
 };
 
 } // end namespace metal
