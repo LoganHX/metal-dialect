@@ -1,4 +1,4 @@
-//===- CppEmitter.h - Helpers to create C++ emitter -------------*- C++ -*-===//
+//===- MetalEmitter.h - Helpers to create C++ emitter -------------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MLIR_TARGET_CPP_CPPEMITTER_H //TODO potrebbe costiuire un problema questa include guard
-#define MLIR_TARGET_CPP_CPPEMITTER_H
+#ifndef MLIR_TARGET_METAL_METALEMITTER_H //TODO potrebbe costiuire un problema questa include guard
+#define MLIR_TARGET_METAL_METALEMITTER_H
 
 #include "mlir/Support/LLVM.h"
 
@@ -29,4 +29,4 @@ LogicalResult translateToMetal(Operation *op, raw_ostream &os,
 } // namespace emitc
 } // namespace mlir
 
-#endif // MLIR_TARGET_CPP_CPPEMITTER_H
+#endif // MLIR_TARGET_METAL_METALEMITTER_H

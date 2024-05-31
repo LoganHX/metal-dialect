@@ -14,7 +14,7 @@
 
 #include <iostream>
 
-#include "metal/Target/Cpp/CppEmitter.h"
+#include "metal/Target/Cpp/MetalEmitter.h"
 #include "mlir/Tools/mlir-translate/Translation.h"
 #include "metal/Target/Cpp/TranslateRegistration.h"
 #include "llvm/Support/CommandLine.h"

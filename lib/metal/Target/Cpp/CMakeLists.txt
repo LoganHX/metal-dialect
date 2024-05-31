@@ -1,6 +1,6 @@
 add_mlir_translation_library(MLIRTargetMetal
   TranslateRegistration.cpp
-  TranslateToCpp.cpp
+  TranslateToMetal.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${EMITC_MAIN_INCLUDE_DIR}/emitc/Target/Cpp
