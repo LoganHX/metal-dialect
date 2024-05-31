@@ -22,28 +22,28 @@ struct Indent {
   Indent level_(_curIndent);                                                   \
   indent();
 
-static llvm::StringRef typeToString(mlir::Type type) {
-  if (auto intTy = llvm::dyn_cast<mlir::IntegerType>(type))
-    switch (intTy.getWidth()) {
-    case 1:
-      return "bool";
-    case 8:
-      return intTy.isSigned() ? "int8_t" : "uint8_t";
-    case 16:
-      return intTy.isSigned() ? "int16_t" : "uint16_t";
-    case 32:
-      return intTy.isSigned() ? "int32_t" : "uint32_t";
-    case 64:
-      return intTy.isSigned() ? "int64_t" : "uint64_t";
-    default:
-      llvm_unreachable("wrong type");
-    }
-  if (type.isF16())
-    return "half";
-  if (type.isF32())
-    return "float";
-  llvm_unreachable("wrong type");
-}
+// static llvm::StringRef typeToString(mlir::Type type) {
+//   if (auto intTy = llvm::dyn_cast<mlir::IntegerType>(type))
+//     switch (intTy.getWidth()) {
+//     case 1:
+//       return "bool";
+//     case 8:
+//       return intTy.isSigned() ? "int8_t" : "uint8_t";
+//     case 16:
+//       return intTy.isSigned() ? "int16_t" : "uint16_t";
+//     case 32:
+//       return intTy.isSigned() ? "int32_t" : "uint32_t";
+//     case 64:
+//       return intTy.isSigned() ? "int64_t" : "uint64_t";
+//     default:
+//       llvm_unreachable("wrong type");
+//     }
+//   if (type.isF16())
+//     return "half";
+//   if (type.isF32())
+//     return "float";
+//   llvm_unreachable("wrong type");
+// }
 
 void ModuleTranslation::indent() {
   for (int i = 0; i < _curIndent; i++)

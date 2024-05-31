@@ -12,12 +12,12 @@
 #include "mlir-c/RegisterEverything.h"
 #include <stdio.h>
 
-static void registerAllUpstreamDialects(MlirContext ctx) {
-  MlirDialectRegistry registry = mlirDialectRegistryCreate();
-  mlirRegisterAllDialects(registry);
-  mlirContextAppendDialectRegistry(ctx, registry);
-  mlirDialectRegistryDestroy(registry);
-}
+// static void registerAllUpstreamDialects(MlirContext ctx) {
+//   MlirDialectRegistry registry = mlirDialectRegistryCreate();
+//   mlirRegisterAllDialects(registry);
+//   mlirContextAppendDialectRegistry(ctx, registry);
+//   mlirDialectRegistryDestroy(registry);
+// }
 
 int main(int argc, char **argv) {
   // MlirContext ctx = mlirContextCreate();
