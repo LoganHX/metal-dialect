@@ -4,7 +4,7 @@ namespace ml = mlir::metal;
 // -----------------------------------------------------------------------------
 // GPU Code
 
-static void createExpressions(mlir::OpBuilder builder, mlir::Location loc) {
+// static void createExpressions(mlir::OpBuilder builder, mlir::Location loc) {
   // builder.create<ml::ThreadIdOp>(loc, "x");
 
   // auto intValue =
@@ -20,10 +20,10 @@ static void createExpressions(mlir::OpBuilder builder, mlir::Location loc) {
 
   // builder.create<ml::BinaryExpOp>(loc, ml::BinaryExpOperator::eqOp, lhs,
   //                                 rhsBool);
-}
+// }
 
-static mlir::metal::KernelOp createKernel(mlir::OpBuilder builder,
-                                          mlir::Location loc) {
+// static mlir::metal::KernelOp createKernel(mlir::OpBuilder builder,
+//                                           mlir::Location loc) {
   // llvm::SmallVector<mlir::Type, 3> buffers = {};
   // llvm::SmallVector<bool, 3> isAddressSpaceDevice = {};
   // auto kernel = builder.create<ml::KernelOp>(loc, "expressions", buffers,
@@ -34,7 +34,7 @@ static mlir::metal::KernelOp createKernel(mlir::OpBuilder builder,
 
   // builder.create<ml::ReturnOp>(loc);
   // return kernel;
-}
+// }
 
 // -----------------------------------------------------------------------------
 // Main
