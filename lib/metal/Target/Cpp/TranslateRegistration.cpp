@@ -9,6 +9,9 @@
 #include "mlir/Dialect/ControlFlow/IR/ControlFlow.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/GPU/IR/GPUDialect.h"
+#include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
+
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 
@@ -35,7 +38,7 @@ void registerToMetalTranslation() {
       llvm::cl::init(false));
 
   TranslateFromMLIRRegistration reg(
-      "mlir-to-cpp", "translate from mlir to cpp",
+      "mlir-to-metal", "translate from mlir to metal",
       [](Operation *op, raw_ostream &output) {
         return translateToMetal(
             op, output,
@@ -44,6 +47,7 @@ void registerToMetalTranslation() {
       [](DialectRegistry &registry) {
         // clang-format off
         registry.insert<cf::ControlFlowDialect,
+                        gpu::GPUDialect,
                         emitc::EmitCDialect,
                         func::FuncDialect>();
         // clang-format on
