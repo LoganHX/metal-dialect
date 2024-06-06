@@ -31,6 +31,9 @@
 #include <iostream>
 #include <stack>
 #include <utility>
+#include <iostream>
+#include <algorithm>
+
 
 #define DEBUG_TYPE "translate-to-cpp"
 
@@ -309,6 +312,10 @@ static bool shouldBeInlined(ExpressionOp expressionOp) {
   // Do not inline expressions used by other expressions, as any desired
   // expression folding was taken care of by transformations.
   return !user->getParentOfType<ExpressionOp>();
+}
+
+static LogicalResult printGpuIndexOps(MetalEmitter &emitter, OpResult result){
+   return emitter.emitVariableDeclaration(result, false);
 }
 
 static LogicalResult printConstantOp(MetalEmitter &emitter,
@@ -921,6 +928,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter, ModuleOp moduleOp) {
   MetalEmitter::Scope scope(emitter);
+  
 
   for (Operation &op : moduleOp) {
     if (failed(emitter.emitOperation(op, /*trailingSemicolon=*/false)))
@@ -1085,7 +1093,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "kernel " << functionOp.getName();
+  os << "kernel ";
   if (failed(emitter.emitTypes(functionOp.getLoc(),
                                functionOp.getFunctionType().getResults())))
     return failure();
@@ -1102,6 +1110,78 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 
   return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::ThreadIdOp threadIdOp) {
+    OpResult result = threadIdOp->getResult(0);
+
+  // Emit a variable declaration for an emitc.constant op without value.
+    printGpuIndexOps(emitter, result);
+  
+    
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream();
+    os << " = id." << threadIdOp.getDimension();
+    
+    return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::BlockIdOp blockIdOp) {
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream();
+    
+    OpResult result = blockIdOp->getResult(0);
+
+    if (failed(emitter.emitVariableDeclaration(result, true)))
+      return failure();
+    if (failed(emitter.emitVariableAssignment(result)))
+      return failure();
+    os << "id." << blockIdOp.getDimension();
+
+    return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::BlockDimOp blockDimOp) {
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream();
+    OpResult result = blockDimOp->getResult(0);
+
+    if (failed(emitter.emitVariableDeclaration(result, true)))
+      return failure();
+    if (failed(emitter.emitVariableAssignment(result)))
+      return failure();
+
+    os << "id." << blockDimOp.getDimension();
+
+    return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::GridDimOp gridDimOp) {
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream();
+    OpResult result = gridDimOp->getResult(0);
+
+    if (failed(emitter.emitVariableDeclaration(result, true)))
+      return failure();
+    if (failed(emitter.emitVariableAssignment(result)))
+      return failure();
+    os << "id." << gridDimOp.getDimension();
+
+    return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::ReturnOp gridDimOp) {
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream();
+    //i kernel meta sono tutti void
+    os << "return";
+
+    return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
@@ -1563,7 +1643,8 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
           .Case<func::CallOp, func::FuncOp, func::ReturnOp>(
               [&](auto op) { return printOperation(*this, op); })
           // gpu ops.
-          .Case<gpu::GPUModuleOp, gpu::GPUFuncOp, gpu::ModuleEndOp, gpu::ThreadIdOp>(
+          .Case<gpu::GPUModuleOp, gpu::GPUFuncOp, gpu::ModuleEndOp, gpu::ThreadIdOp, gpu::BlockIdOp,
+          gpu::GridDimOp, gpu::BlockDimOp, gpu::ReturnOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<emitc::LiteralOp>([&](auto op) { return success(); })
           .Default([&](Operation *) {
