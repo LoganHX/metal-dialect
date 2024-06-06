@@ -1023,8 +1023,9 @@ static LogicalResult printFunctionBody(MetalEmitter &emitter,
       // When generating code for an emitc.for and emitc.verbatim op, printing a
       // trailing semicolon is handled within the printOperation function.
       bool trailingSemicolon =
-          !isa<cf::CondBranchOp, emitc::DeclareFuncOp, emitc::ForOp,
-               emitc::IfOp, emitc::LiteralOp, emitc::VerbatimOp>(op);
+          !isa<cf::CondBranchOp, emitc::DeclareFuncOp, emitc::ForOp, 
+               emitc::IfOp, emitc::LiteralOp, emitc::VerbatimOp, 
+               gpu::GPUFuncOp, gpu::ModuleEndOp >(op);
 
       if (failed(emitter.emitOperation(
               op, /*trailingSemicolon=*/trailingSemicolon)))
@@ -1116,10 +1117,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::ThreadIdOp threadIdOp) {
     OpResult result = threadIdOp->getResult(0);
 
-  // Emit a variable declaration for an emitc.constant op without value.
     printGpuIndexOps(emitter, result);
   
-    
     MetalEmitter::Scope scope(emitter);
     raw_indented_ostream &os = emitter.ostream();
     os << " = id." << threadIdOp.getDimension();
@@ -1129,15 +1128,13 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::BlockIdOp blockIdOp) {
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream();
-    
+      
     OpResult result = blockIdOp->getResult(0);
 
-    if (failed(emitter.emitVariableDeclaration(result, true)))
-      return failure();
-    if (failed(emitter.emitVariableAssignment(result)))
-      return failure();
+    printGpuIndexOps(emitter, result);
+  
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream();
     os << "id." << blockIdOp.getDimension();
 
     return success();
@@ -1145,15 +1142,12 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::BlockDimOp blockDimOp) {
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream();
+  
     OpResult result = blockDimOp->getResult(0);
-
-    if (failed(emitter.emitVariableDeclaration(result, true)))
-      return failure();
-    if (failed(emitter.emitVariableAssignment(result)))
-      return failure();
-
+    printGpuIndexOps(emitter, result);
+  
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream(); 
     os << "id." << blockDimOp.getDimension();
 
     return success();
@@ -1161,14 +1155,13 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::GridDimOp gridDimOp) {
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream();
+    
     OpResult result = gridDimOp->getResult(0);
 
-    if (failed(emitter.emitVariableDeclaration(result, true)))
-      return failure();
-    if (failed(emitter.emitVariableAssignment(result)))
-      return failure();
+    printGpuIndexOps(emitter, result);
+  
+    MetalEmitter::Scope scope(emitter);
+    raw_indented_ostream &os = emitter.ostream();
     os << "id." << gridDimOp.getDimension();
 
     return success();
