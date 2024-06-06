@@ -1,4 +1,5 @@
-//===- TranslateToMetal.cpp - Translating to C++ calls ----------------------===//
+//===- TranslateToMetal.cpp - Translating to C++ calls
+//----------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -18,6 +19,8 @@
 #include "mlir/Support/LLVM.h"
 
 #include "metal/Target/Cpp/MetalEmitter.h"
+#include "mlir/Dialect/GPU/IR/GPUDialect.h"
+#include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/ScopedHashTable.h"
 #include "llvm/ADT/StringExtras.h"
@@ -25,8 +28,8 @@
 #include "llvm/ADT/TypeSwitch.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FormatVariadic.h"
-#include <stack>
 #include <iostream>
+#include <stack>
 #include <utility>
 
 #define DEBUG_TYPE "translate-to-cpp"
@@ -308,8 +311,8 @@ static bool shouldBeInlined(ExpressionOp expressionOp) {
   return !user->getParentOfType<ExpressionOp>();
 }
 
-static LogicalResult printConstantOp(MetalEmitter &emitter, Operation *operation,
-                                     Attribute value) {
+static LogicalResult printConstantOp(MetalEmitter &emitter,
+                                     Operation *operation, Attribute value) {
   OpResult result = operation->getResult(0);
 
   // Only emit an assignment as the variable was already declared when printing
@@ -427,7 +430,8 @@ static LogicalResult printOperation(MetalEmitter &emitter, emitc::AddOp addOp) {
   return printBinaryOperation(emitter, operation, "+");
 }
 
-// static LogicalResult printOperation(MetalEmitter &emitter, mlir::metal::BinaryExpOp addOp) {
+// static LogicalResult printOperation(MetalEmitter &emitter,
+// mlir::metal::BinaryExpOp addOp) {
 //   Operation *operation = addOp.getOperation();
 //   std::cout << "\n\nTRAPANI\n\n";
 //   return printBinaryOperation(emitter, operation, "+");
@@ -563,7 +567,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 //   os << "goto ";
 //   if (!(emitter.hasBlockLabel(trueSuccessor))) {
-//     return condBranchOp.emitOpError("unable to find label for successor block");
+//     return condBranchOp.emitOpError("unable to find label for successor
+//     block");
 //   }
 //   os << emitter.getOrCreateName(trueSuccessor) << ";\n";
 //   os.unindent() << "} else {\n";
@@ -587,8 +592,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 //   return success();
 // }
 
-static LogicalResult printCallOperation(MetalEmitter &emitter, Operation *callOp,
-                                        StringRef callee) {
+static LogicalResult printCallOperation(MetalEmitter &emitter,
+                                        Operation *callOp, StringRef callee) {
   if (failed(emitter.emitAssignPrefix(*callOp)))
     return failure();
 
@@ -600,14 +605,16 @@ static LogicalResult printCallOperation(MetalEmitter &emitter, Operation *callOp
   return success();
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter, func::CallOp callOp) {
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    func::CallOp callOp) {
   Operation *operation = callOp.getOperation();
   StringRef callee = callOp.getCallee();
 
   return printCallOperation(emitter, operation, callee);
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter, emitc::CallOp callOp) {
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    emitc::CallOp callOp) {
   Operation *operation = callOp.getOperation();
   StringRef callee = callOp.getCallee();
 
@@ -727,7 +734,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return printUnaryOperation(emitter, operation, "-");
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter, emitc::CastOp castOp) {
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    emitc::CastOp castOp) {
   raw_ostream &os = emitter.ostream();
   Operation &op = *castOp.getOperation();
 
@@ -1054,6 +1062,49 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::GPUModuleOp moduleOp) {
+
+  Operation *operation = moduleOp.getOperation();
+
+  if (failed(printFunctionBody(emitter, operation,
+                               moduleOp.getBodyRegion().getBlocks())))
+    return failure();
+
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::ModuleEndOp moduleOp) {
+
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::GPUFuncOp functionOp) {
+
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "kernel " << functionOp.getName();
+  if (failed(emitter.emitTypes(functionOp.getLoc(),
+                               functionOp.getFunctionType().getResults())))
+    return failure();
+  os << " " << functionOp.getName();
+
+  os << "(";
+  Operation *operation = functionOp.getOperation();
+  if (failed(printFunctionArgs(emitter, operation, functionOp.getArguments())))
+    return failure();
+  os << ") {\n";
+  if (failed(printFunctionBody(emitter, operation, functionOp.getBlocks())))
+    return failure();
+  os << "}\n";
+
+
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
                                     emitc::FuncOp functionOp) {
   // We need to declare variables at top if the function has multiple blocks.
   if (!emitter.shouldDeclareVariablesAtTop() &&
@@ -1367,7 +1418,7 @@ LogicalResult MetalEmitter::emitOperands(Operation &op) {
 
 LogicalResult
 MetalEmitter::emitOperandsAndAttributes(Operation &op,
-                                      ArrayRef<StringRef> exclude) {
+                                        ArrayRef<StringRef> exclude) {
   if (failed(emitOperands(op)))
     return failure();
   // Insert comma in between operands and non-filtered attributes if needed.
@@ -1401,7 +1452,7 @@ LogicalResult MetalEmitter::emitVariableAssignment(OpResult result) {
 }
 
 LogicalResult MetalEmitter::emitVariableDeclaration(OpResult result,
-                                                  bool trailingSemicolon) {
+                                                    bool trailingSemicolon) {
   if (isa<emitc::SubscriptOp>(result.getDefiningOp()))
     return success();
   if (hasValueInScope(result)) {
@@ -1485,7 +1536,8 @@ LogicalResult MetalEmitter::emitLabel(Block &block) {
   return success();
 }
 
-LogicalResult MetalEmitter::emitOperation(Operation &op, bool trailingSemicolon) {
+LogicalResult MetalEmitter::emitOperation(Operation &op,
+                                          bool trailingSemicolon) {
   LogicalResult status =
       llvm::TypeSwitch<Operation *, LogicalResult>(&op)
           // Builtin ops.
@@ -1510,6 +1562,9 @@ LogicalResult MetalEmitter::emitOperation(Operation &op, bool trailingSemicolon)
           // Func ops.
           .Case<func::CallOp, func::FuncOp, func::ReturnOp>(
               [&](auto op) { return printOperation(*this, op); })
+          // gpu ops.
+          .Case<gpu::GPUModuleOp, gpu::GPUFuncOp, gpu::ModuleEndOp, gpu::ThreadIdOp>(
+              [&](auto op) { return printOperation(*this, op); })
           .Case<emitc::LiteralOp>([&](auto op) { return success(); })
           .Default([&](Operation *) {
             return op.emitOpError("unable to find printer for op");
@@ -1532,7 +1587,7 @@ LogicalResult MetalEmitter::emitOperation(Operation &op, bool trailingSemicolon)
 }
 
 LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
-                                                  StringRef name) {
+                                                    StringRef name) {
   if (auto arrType = dyn_cast<emitc::ArrayType>(type)) {
     if (failed(emitType(loc, arrType.getElementType())))
       return failure();
@@ -1644,7 +1699,7 @@ LogicalResult MetalEmitter::emitTupleType(Location loc, ArrayRef<Type> types) {
 }
 
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
-                                    bool declareVariablesAtTop) {
+                                            bool declareVariablesAtTop) {
   MetalEmitter emitter(os, declareVariablesAtTop);
   return emitter.emitOperation(*op, /*trailingSemicolon=*/false);
 }
