@@ -21,6 +21,7 @@
 #include "metal/Target/Cpp/MetalEmitter.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/ScopedHashTable.h"
 #include "llvm/ADT/StringExtras.h"
@@ -122,6 +123,7 @@ static FailureOr<int> getOperatorPrecedence(Operation *operation) {
 namespace {
 /// Emitter that uses dialect specific emitters to emit C++ code.
 struct MetalEmitter {
+
   explicit MetalEmitter(raw_ostream &os, bool declareVariablesAtTop);
 
   /// Emits attribute or returns failure.
@@ -181,6 +183,10 @@ struct MetalEmitter {
 
   /// Emit an expression as a C expression.
   LogicalResult emitExpression(ExpressionOp expressionOp);
+
+  LogicalResult emitMemRefSize(Location loc, MemRefType memRefType);
+
+  LogicalResult emitTypeSize(Location loc, Type type);
 
   /// Return the existing or a new name for a Value.
   StringRef getOrCreateName(Value val);
@@ -312,10 +318,6 @@ static bool shouldBeInlined(ExpressionOp expressionOp) {
   // Do not inline expressions used by other expressions, as any desired
   // expression folding was taken care of by transformations.
   return !user->getParentOfType<ExpressionOp>();
-}
-
-static LogicalResult printGpuIndexOps(MetalEmitter &emitter, OpResult result){
-   return emitter.emitVariableDeclaration(result, false);
 }
 
 static LogicalResult printConstantOp(MetalEmitter &emitter,
@@ -1070,6 +1072,38 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    memref::AllocOp allocOp) {
+
+  OpResult result = allocOp->getResult(0);
+
+  emitter.emitVariableDeclaration(result, true);
+  emitter.emitVariableAssignment(result);
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+   
+  os << "_MetalDeviceMakeBuffer(device, false, " ;
+  emitter.emitMemRefSize(allocOp.getLoc(), allocOp.getType());
+  os << ", ";
+  emitter.emitTypeSize(allocOp.getLoc(), allocOp.getType().getElementType());
+  os << ")";
+
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    memref::DeallocOp deallocOp) {
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalRelease(" ;
+  os << emitter.getOrCreateName(deallocOp.getOperand().getDefiningOp()->getOpResult(0));
+  os << ")" ;
+  return success();
+}
+
+
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::GPUModuleOp moduleOp) {
 
@@ -1089,6 +1123,24 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
+                                    gpu::LaunchFuncOp functionOp) {
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"
+  << functionOp.getKernelModuleName();
+  os << ",";
+  emitter.emitOperand(functionOp.getGridSizeX());
+  os << ",";
+  emitter.emitOperand(functionOp.getGridSizeY());
+  os << ",";
+  emitter.emitOperand(functionOp.getGridSizeZ());
+  os << "))";
+
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::GPUFuncOp functionOp) {
 
 
@@ -1098,7 +1150,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   if (failed(emitter.emitTypes(functionOp.getLoc(),
                                functionOp.getFunctionType().getResults())))
     return failure();
-  os << " " << functionOp.getName();
+  os << " " << functionOp.getParentOp().getName();
 
   os << "(";
   Operation *operation = functionOp.getOperation();
@@ -1117,11 +1169,12 @@ static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::ThreadIdOp threadIdOp) {
     OpResult result = threadIdOp->getResult(0);
 
-    printGpuIndexOps(emitter, result);
+    emitter.emitVariableDeclaration(result, true);
+    emitter.emitVariableAssignment(result);
   
     MetalEmitter::Scope scope(emitter);
     raw_indented_ostream &os = emitter.ostream();
-    os << " = id." << threadIdOp.getDimension();
+    os << "id." << threadIdOp.getDimension();
     
     return success();
 }
@@ -1131,7 +1184,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
       
     OpResult result = blockIdOp->getResult(0);
 
-    printGpuIndexOps(emitter, result);
+    emitter.emitVariableDeclaration(result, true);
+    emitter.emitVariableAssignment(result);
+
   
     MetalEmitter::Scope scope(emitter);
     raw_indented_ostream &os = emitter.ostream();
@@ -1144,7 +1199,10 @@ static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::BlockDimOp blockDimOp) {
   
     OpResult result = blockDimOp->getResult(0);
-    printGpuIndexOps(emitter, result);
+   
+    emitter.emitVariableDeclaration(result, true);
+    emitter.emitVariableAssignment(result);
+
   
     MetalEmitter::Scope scope(emitter);
     raw_indented_ostream &os = emitter.ostream(); 
@@ -1158,7 +1216,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
     
     OpResult result = gridDimOp->getResult(0);
 
-    printGpuIndexOps(emitter, result);
+    emitter.emitVariableDeclaration(result, true);
+    emitter.emitVariableAssignment(result);
+
   
     MetalEmitter::Scope scope(emitter);
     raw_indented_ostream &os = emitter.ostream();
@@ -1516,6 +1576,7 @@ MetalEmitter::emitOperandsAndAttributes(Operation &op,
 }
 
 LogicalResult MetalEmitter::emitVariableAssignment(OpResult result) {
+
   if (!hasValueInScope(result)) {
     return result.getDefiningOp()->emitOpError(
         "result variable for the operation has not been declared");
@@ -1637,8 +1698,10 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
               [&](auto op) { return printOperation(*this, op); })
           // gpu ops.
           .Case<gpu::GPUModuleOp, gpu::GPUFuncOp, gpu::ModuleEndOp, gpu::ThreadIdOp, gpu::BlockIdOp,
-          gpu::GridDimOp, gpu::BlockDimOp, gpu::ReturnOp>(
+          gpu::GridDimOp, gpu::BlockDimOp, gpu::ReturnOp, gpu::LaunchFuncOp>(
               [&](auto op) { return printOperation(*this, op); })
+          .Case<memref::AllocOp, memref::DeallocOp>(
+              [&](auto op) { return printOperation(*this, op); })    
           .Case<emitc::LiteralOp>([&](auto op) { return success(); })
           .Default([&](Operation *) {
             return op.emitOpError("unable to find printer for op");
@@ -1661,7 +1724,7 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
 }
 
 LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
-                                                    StringRef name) {
+                                                    StringRef name) {                             
   if (auto arrType = dyn_cast<emitc::ArrayType>(type)) {
     if (failed(emitType(loc, arrType.getElementType())))
       return failure();
@@ -1678,6 +1741,11 @@ LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
 }
 
 LogicalResult MetalEmitter::emitType(Location loc, Type type) {
+
+  if (auto memrefType = dyn_cast<MemRefType>(type)) {
+   return (os << "intptr_t"), success();
+  }
+  
   if (auto iType = dyn_cast<IntegerType>(type)) {
     switch (iType.getWidth()) {
     case 1:
@@ -1771,6 +1839,33 @@ LogicalResult MetalEmitter::emitTupleType(Location loc, ArrayRef<Type> types) {
   os << ">";
   return success();
 }
+
+LogicalResult MetalEmitter::emitMemRefSize(Location loc, MemRefType memrefType) {
+    
+  if (memrefType.getShape().size() < 1) {
+    return emitError(loc, "cannot emit such a size");
+  }
+  int size = 1;
+  for(size_t i = 0; i < memrefType.getShape().size(); i++){
+    size = size * memrefType.getDimSize(i);
+  }
+  return (os << size), success();
+}
+
+LogicalResult MetalEmitter::emitTypeSize(Location loc, Type type) {
+    
+  if (auto iType = dyn_cast<IntegerType>(type)) {
+    return (os << (int)ceil(iType.getWidth()/8)), success();
+  }
+  if (auto fType = dyn_cast<FloatType>(type)) {
+    return (os << (int)ceil(fType.getWidth()/8)), success();
+  }
+  
+  return emitError(loc, "cannot emit type size") << type;
+}
+
+
+
 
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
                                             bool declareVariablesAtTop) {
