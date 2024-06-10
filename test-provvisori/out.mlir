@@ -7,16 +7,14 @@ void main() {
   size_t v6 = 40000;
   intptr_t v7;
   v7 = _MetalDeviceMakeBuffer(device, false, 1600000000, 4);
-  intptr_t v8;
-  v8 = _MetalDeviceMakeBuffer(device, false, 1600000000, 4);
-  size_t v9 = 1;
+  size_t v8 = 1;
+  size_t v9 = 40000;
   size_t v10 = 40000;
-  size_t v11 = 40000;
-  _MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel",v10,v11,v9));
-  size_t v12 = 1;
+  _MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel",v9,v10,v8));
+  size_t v11 = 1;
+  size_t v12 = 40000;
   size_t v13 = 40000;
-  size_t v14 = 40000;
-  _MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel_0",v13,v14,v12));
+  _MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel_0",v12,v13,v11));
   _MetalRelease(v7);
   return;
 }
@@ -48,12 +46,6 @@ void main() {
     v12 = id.z;
     size_t v13 = 1;
     size_t v14 = 0;
-    float v15 = 2.110000040e+01f;
-    float v16 = 4.209999850e+01f;
-    float v17 = 8.409999850e+01f;
-    intptr_t v18;
-    v18 = _MetalDeviceMakeBuffer(device, false, 1600000000, 4);
-    float v19 = 8.409999850e+01f;
     return;
   }
 

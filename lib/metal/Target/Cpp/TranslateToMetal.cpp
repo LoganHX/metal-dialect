@@ -29,12 +29,10 @@
 #include "llvm/ADT/TypeSwitch.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FormatVariadic.h"
+#include <algorithm>
 #include <iostream>
 #include <stack>
 #include <utility>
-#include <iostream>
-#include <algorithm>
-
 
 #define DEBUG_TYPE "translate-to-cpp"
 
@@ -155,6 +153,9 @@ struct MetalEmitter {
   /// Emits a declaration of a variable with the given type and name.
   LogicalResult emitVariableDeclaration(Location loc, Type type,
                                         StringRef name);
+
+  /// Emits a variable declaration for a result of an operation.
+  LogicalResult emitVariableAssignmentAndDeclaration(OpResult result);
 
   /// Emits the variable declaration and assignment prefix for 'op'.
   /// - emits separate variable followed by std::tie for multi-valued operation;
@@ -930,7 +931,6 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter, ModuleOp moduleOp) {
   MetalEmitter::Scope scope(emitter);
-  
 
   for (Operation &op : moduleOp) {
     if (failed(emitter.emitOperation(op, /*trailingSemicolon=*/false)))
@@ -954,7 +954,6 @@ static LogicalResult printFunctionArgs(MetalEmitter &emitter,
                                        Operation *functionOp,
                                        Region::BlockArgListType arguments) {
   raw_indented_ostream &os = emitter.ostream();
-
   return (interleaveCommaWithError(
       arguments, os, [&](BlockArgument arg) -> LogicalResult {
         return emitter.emitVariableDeclaration(
@@ -1025,9 +1024,9 @@ static LogicalResult printFunctionBody(MetalEmitter &emitter,
       // When generating code for an emitc.for and emitc.verbatim op, printing a
       // trailing semicolon is handled within the printOperation function.
       bool trailingSemicolon =
-          !isa<cf::CondBranchOp, emitc::DeclareFuncOp, emitc::ForOp, 
-               emitc::IfOp, emitc::LiteralOp, emitc::VerbatimOp, 
-               gpu::GPUFuncOp, gpu::ModuleEndOp >(op);
+          !isa<cf::CondBranchOp, emitc::DeclareFuncOp, emitc::ForOp,
+               emitc::IfOp, emitc::LiteralOp, emitc::VerbatimOp, gpu::GPUFuncOp,
+               gpu::ModuleEndOp>(op);
 
       if (failed(emitter.emitOperation(
               op, /*trailingSemicolon=*/trailingSemicolon)))
@@ -1072,18 +1071,17 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
-
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::AllocOp allocOp) {
 
   OpResult result = allocOp->getResult(0);
 
-  emitter.emitVariableDeclaration(result, true);
-  emitter.emitVariableAssignment(result);
+  emitter.emitVariableAssignmentAndDeclaration(result);
+
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-   
-  os << "_MetalDeviceMakeBuffer(device, false, " ;
+
+  os << "_MetalDeviceMakeBuffer(device, false, ";
   emitter.emitMemRefSize(allocOp.getLoc(), allocOp.getType());
   os << ", ";
   emitter.emitTypeSize(allocOp.getLoc(), allocOp.getType().getElementType());
@@ -1097,12 +1095,12 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "_MetalRelease(" ;
-  os << emitter.getOrCreateName(deallocOp.getOperand().getDefiningOp()->getOpResult(0));
-  os << ")" ;
+  os << "_MetalRelease(";
+  os << emitter.getOrCreateName(
+      deallocOp.getOperand().getDefiningOp()->getOpResult(0));
+  os << ")";
   return success();
 }
-
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::GPUModuleOp moduleOp) {
@@ -1127,8 +1125,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "_MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"
-  << functionOp.getKernelModuleName();
+  os << "_MetalCommandBufferCommit(_"
+        "MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"
+     << functionOp.getKernelModuleName();
   os << ",";
   emitter.emitOperand(functionOp.getGridSizeX());
   os << ",";
@@ -1142,7 +1141,6 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::GPUFuncOp functionOp) {
-
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
@@ -1161,80 +1159,51 @@ static LogicalResult printOperation(MetalEmitter &emitter,
     return failure();
   os << "}\n";
 
+  return success();
+}
+
+static LogicalResult printAccessGPUIDDimensionOp(MetalEmitter &emitter,
+                                                 OpResult result,
+                                                 gpu::Dimension dim) {
+
+  if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
+    return failure();
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "id." << dim;
 
   return success();
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter,
-                                    gpu::ThreadIdOp threadIdOp) {
-    OpResult result = threadIdOp->getResult(0);
-
-    emitter.emitVariableDeclaration(result, true);
-    emitter.emitVariableAssignment(result);
-  
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream();
-    os << "id." << threadIdOp.getDimension();
-    
-    return success();
+static LogicalResult printOperation(MetalEmitter &emitter, gpu::ThreadIdOp op) {
+  return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
+                                     op.getDimension());
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter,
-                                    gpu::BlockIdOp blockIdOp) {
-      
-    OpResult result = blockIdOp->getResult(0);
-
-    emitter.emitVariableDeclaration(result, true);
-    emitter.emitVariableAssignment(result);
-
-  
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream();
-    os << "id." << blockIdOp.getDimension();
-
-    return success();
+static LogicalResult printOperation(MetalEmitter &emitter, gpu::BlockIdOp op) {
+  return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
+                                     op.getDimension());
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter,
-                                    gpu::BlockDimOp blockDimOp) {
-  
-    OpResult result = blockDimOp->getResult(0);
-   
-    emitter.emitVariableDeclaration(result, true);
-    emitter.emitVariableAssignment(result);
-
-  
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream(); 
-    os << "id." << blockDimOp.getDimension();
-
-    return success();
+static LogicalResult printOperation(MetalEmitter &emitter, gpu::BlockDimOp op) {
+  return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
+                                     op.getDimension());
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter,
-                                    gpu::GridDimOp gridDimOp) {
-    
-    OpResult result = gridDimOp->getResult(0);
-
-    emitter.emitVariableDeclaration(result, true);
-    emitter.emitVariableAssignment(result);
-
-  
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream();
-    os << "id." << gridDimOp.getDimension();
-
-    return success();
+static LogicalResult printOperation(MetalEmitter &emitter, gpu::GridDimOp op) {
+  return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
+                                     op.getDimension());
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::ReturnOp gridDimOp) {
-    MetalEmitter::Scope scope(emitter);
-    raw_indented_ostream &os = emitter.ostream();
-    //i kernel meta sono tutti void
-    os << "return";
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  // i kernel meta sono tutti void
+  os << "return";
 
-    return success();
+  return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
@@ -1602,6 +1571,16 @@ LogicalResult MetalEmitter::emitVariableDeclaration(OpResult result,
   return success();
 }
 
+LogicalResult
+MetalEmitter::emitVariableAssignmentAndDeclaration(OpResult result) {
+  if (failed(emitVariableDeclaration(result, true)))
+    return failure();
+  if (failed(emitVariableAssignment(result)))
+    return failure();
+
+  return success();
+}
+
 LogicalResult MetalEmitter::emitGlobalVariable(GlobalOp op) {
   if (op.getExternSpecifier())
     os << "extern ";
@@ -1697,11 +1676,12 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
           .Case<func::CallOp, func::FuncOp, func::ReturnOp>(
               [&](auto op) { return printOperation(*this, op); })
           // gpu ops.
-          .Case<gpu::GPUModuleOp, gpu::GPUFuncOp, gpu::ModuleEndOp, gpu::ThreadIdOp, gpu::BlockIdOp,
-          gpu::GridDimOp, gpu::BlockDimOp, gpu::ReturnOp, gpu::LaunchFuncOp>(
+          .Case<gpu::GPUModuleOp, gpu::GPUFuncOp, gpu::ModuleEndOp,
+                gpu::ThreadIdOp, gpu::BlockIdOp, gpu::GridDimOp,
+                gpu::BlockDimOp, gpu::ReturnOp, gpu::LaunchFuncOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<memref::AllocOp, memref::DeallocOp>(
-              [&](auto op) { return printOperation(*this, op); })    
+              [&](auto op) { return printOperation(*this, op); })
           .Case<emitc::LiteralOp>([&](auto op) { return success(); })
           .Default([&](Operation *) {
             return op.emitOpError("unable to find printer for op");
@@ -1724,7 +1704,7 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
 }
 
 LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
-                                                    StringRef name) {                             
+                                                    StringRef name) {
   if (auto arrType = dyn_cast<emitc::ArrayType>(type)) {
     if (failed(emitType(loc, arrType.getElementType())))
       return failure();
@@ -1743,9 +1723,9 @@ LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
 LogicalResult MetalEmitter::emitType(Location loc, Type type) {
 
   if (auto memrefType = dyn_cast<MemRefType>(type)) {
-   return (os << "intptr_t"), success();
+    return (os << "intptr_t"), success();
   }
-  
+
   if (auto iType = dyn_cast<IntegerType>(type)) {
     switch (iType.getWidth()) {
     case 1:
@@ -1840,32 +1820,30 @@ LogicalResult MetalEmitter::emitTupleType(Location loc, ArrayRef<Type> types) {
   return success();
 }
 
-LogicalResult MetalEmitter::emitMemRefSize(Location loc, MemRefType memrefType) {
-    
+LogicalResult MetalEmitter::emitMemRefSize(Location loc,
+                                           MemRefType memrefType) {
+
   if (memrefType.getShape().size() < 1) {
     return emitError(loc, "cannot emit such a size");
   }
   int size = 1;
-  for(size_t i = 0; i < memrefType.getShape().size(); i++){
+  for (size_t i = 0; i < memrefType.getShape().size(); i++) {
     size = size * memrefType.getDimSize(i);
   }
   return (os << size), success();
 }
 
 LogicalResult MetalEmitter::emitTypeSize(Location loc, Type type) {
-    
+
   if (auto iType = dyn_cast<IntegerType>(type)) {
-    return (os << (int)ceil(iType.getWidth()/8)), success();
+    return (os << (int)ceil(iType.getWidth() / 8)), success();
   }
   if (auto fType = dyn_cast<FloatType>(type)) {
-    return (os << (int)ceil(fType.getWidth()/8)), success();
+    return (os << (int)ceil(fType.getWidth() / 8)), success();
   }
-  
+
   return emitError(loc, "cannot emit type size") << type;
 }
-
-
-
 
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
                                             bool declareVariablesAtTop) {

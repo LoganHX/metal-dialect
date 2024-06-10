@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-start="test-provvisori/1-starting_point.mlir"
+start="test-provvisori/starting_point.mlir"
 input="test-provvisori/parallel.mlir"
 output="test-provvisori/out.mlir"
 

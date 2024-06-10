@@ -7,7 +7,6 @@ module attributes {gpu.container_module} {
     %4 = "emitc.constant"() <{value = 0 : index}> : () -> index
     %5 = "emitc.constant"() <{value = 40000 : index}> : () -> index
     %alloc = memref.alloc() : memref<40000x40000xf32>
-    %alloc_0 = memref.alloc() : memref<40000x40000xf32>
     %6 = "emitc.constant"() <{value = 1 : index}> : () -> index
     %7 = "emitc.constant"() <{value = 40000 : index}> : () -> index
     %8 = "emitc.constant"() <{value = 40000 : index}> : () -> index
@@ -35,11 +34,6 @@ module attributes {gpu.container_module} {
       %block_dim_z = gpu.block_dim  z
       %0 = "emitc.constant"() <{value = 1 : index}> : () -> index
       %1 = "emitc.constant"() <{value = 0 : index}> : () -> index
-      %2 = "emitc.constant"() <{value = 2.110000e+01 : f32}> : () -> f32
-      %3 = "emitc.constant"() <{value = 4.210000e+01 : f32}> : () -> f32
-      %4 = "emitc.constant"() <{value = 8.410000e+01 : f32}> : () -> f32
-      %alloc = memref.alloc() : memref<40000x40000xf32>
-      %5 = "emitc.constant"() <{value = 8.410000e+01 : f32}> : () -> f32
       gpu.return
     }
   }
