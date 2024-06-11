@@ -192,6 +192,8 @@ struct MetalEmitter {
   LogicalResult emitLinearIndex(Location loc, int x, int y, int z,
                                 SmallVector<Value> indices);
 
+  LogicalResult emitLinearIndex(Location loc, StringRef xSize, StringRef ySize,
+                                StringRef zSize, SmallVector<Value> indices);
   /// Return the existing or a new name for a Value.
   StringRef getOrCreateName(Value val);
 
@@ -1143,10 +1145,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   // os << "(";
   // os << emitter.getOrCreateName(storeOp.getOperand(1));
   // os << ", ";
-  // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth, storeOp.getIndices());
-  // os << ", ";
-  // os << emitter.getOrCreateName(storeOp.getOperand(0));
-  // os << ")";
+  // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth,
+  // storeOp.getIndices()); os << ", "; os <<
+  // emitter.getOrCreateName(storeOp.getOperand(0)); os << ")";
 
   MemRefType memrefType = cast<MemRefType>(storeOp.getMemref().getType());
 
@@ -1158,10 +1159,11 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   if (failed(getMemRefSize(memrefType, &width, &length, &heigth)))
     return failure();
-  
+
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
-  emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth, storeOp.getIndices());
+  emitter.emitLinearIndex(storeOp.getLoc(), "gridSize.x", "gridSize.y", "gridSize.z",
+                          storeOp.getIndices());
   os << "]";
   os << " = ";
   os << emitter.getOrCreateName(storeOp.getOperand(0));
@@ -1171,24 +1173,26 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::LoadOp loadOp) {
 
-  OpResult result = loadOp->getResult(0);   
+  OpResult result = loadOp->getResult(0);
   MemRefType memrefType = cast<MemRefType>(loadOp.getMemref().getType());
 
   int width = 1;
   int length = 1;
   int heigth = 1;
-    
+
   if (failed(getMemRefSize(memrefType, &width, &length, &heigth)))
     return failure();
-  if(failed(emitter.emitVariableAssignmentAndDeclaration(result)))
+  if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
     return failure();
-  //TODO bisogna dichiarare/assegnare le variabili prima di MetalEmitter::Scope e/o raw_indented_ostream  
-  
+  // TODO bisogna dichiarare/assegnare le variabili prima di MetalEmitter::Scope
+  // e/o raw_indented_ostream
+
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
   os << "[";
-  emitter.emitLinearIndex(loadOp.getLoc(), width, length, heigth, loadOp.getIndices());
+  emitter.emitLinearIndex(loadOp.getLoc(), width, length, heigth,
+                          loadOp.getIndices());
   os << "]";
   return success();
 }
@@ -1211,11 +1215,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
-
-
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::LaunchFuncOp functionOp) {
-  
+
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
   os << "_MetalCommandBufferCommit(_"
@@ -1773,7 +1775,8 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
                 gpu::ThreadIdOp, gpu::BlockIdOp, gpu::GridDimOp,
                 gpu::BlockDimOp, gpu::ReturnOp, gpu::LaunchFuncOp>(
               [&](auto op) { return printOperation(*this, op); })
-          .Case<memref::AllocOp, memref::DeallocOp, memref::StoreOp, memref::LoadOp>(
+          .Case<memref::AllocOp, memref::DeallocOp, memref::StoreOp,
+                memref::LoadOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<emitc::LiteralOp>([&](auto op) { return success(); })
           .Default([&](Operation *) {
@@ -1812,7 +1815,6 @@ LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
   os << " " << name;
   return success();
 }
-
 
 LogicalResult MetalEmitter::emitType(Location loc, Type type) {
 
@@ -1940,7 +1942,8 @@ LogicalResult MetalEmitter::emitTypeSize(Location loc, Type type) {
   return emitError(loc, "cannot emit type size") << type;
 }
 
-LogicalResult MetalEmitter::emitLinearIndex(Location loc, int x, int y, int z,
+LogicalResult MetalEmitter::emitLinearIndex(Location loc, int xSize, int ySize,
+                                            int zSize,
                                             SmallVector<Value> indices) {
   if (indices.size() > 3)
     return failure();
@@ -1951,27 +1954,49 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc, int x, int y, int z,
   StringRef j = "0";
   StringRef k = "0";
 
-  int length = 1;
-  int heigth = 1;
-
   if (indices.size() == 3) {
-    heigth = y;
     k = getOrCreateName(indices[2]);
   }
   if (indices.size() >= 2) {
-    length = x;
     j = getOrCreateName(indices[1]);
   }
   if (indices.size() >= 1) {
     i = getOrCreateName(indices[0]);
   }
-  //(i * length * height) + (j * height) + k
+  // return (z * xSize * ySize) + (y * xSize) + x;
 
-  return (os << "(" << i << " * " << length << " * " << heigth << ") + (" << j
-             << " * " << heigth << ") + " << k,
+  return (os << "(" << k << " * " << xSize << " * " << ySize << ") + (" << j
+             << " * " << xSize << ") + " << i,
           success());
 }
 
+LogicalResult MetalEmitter::emitLinearIndex(Location loc, StringRef xSize,
+                                            StringRef ySize, StringRef zSize,
+                                            SmallVector<Value> indices) {
+  if (indices.size() > 3)
+    return failure();
+  if (indices.size() <= 0)
+    return failure();
+
+  StringRef i = "0";
+  StringRef j = "0";
+  StringRef k = "0";
+
+  if (indices.size() == 3) {
+    k = getOrCreateName(indices[2]);
+  }
+  if (indices.size() >= 2) {
+    j = getOrCreateName(indices[1]);
+  }
+  if (indices.size() >= 1) {
+    i = getOrCreateName(indices[0]);
+  }
+  // return (z * xSize * ySize) + (y * xSize) + x;
+
+  return (os << "(" << k << " * " << xSize << " * " << ySize << ") + (" << j
+             << " * " << xSize << ") + " << i,
+          success());
+}
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
                                             bool declareVariablesAtTop) {
   MetalEmitter emitter(os, declareVariablesAtTop);
