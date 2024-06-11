@@ -116,7 +116,7 @@ func.func @main() {
   //%U = memref.cast %A :  memref<40000x40000xf32> to memref<*xf32>
 
   scf.parallel (%i, %j) = (%lb, %lb) to (%ub, %ub) step (%c1, %c1) {
-    //memref.store %c0, %A[%i, %j] : memref<40000x40000xf32>
+    memref.store %c0, %A[%i, %j] : memref<40000x40000xf32>
   }
 
   scf.parallel (%i, %j) = (%lb, %lb) to (%ub, %ub) step (%c1, %c1) {
@@ -125,9 +125,9 @@ func.func @main() {
     //%2 = arith.index_cast %1 : index to i32
     %2 = arith.constant 0 : i32
     %3 = arith.sitofp %2 : i32 to f32
-    //%4 = memref.load %A[%i, %j] : memref<40000x40000xf32>
-    // %5 = arith.addf %3, %4 : f32
-    // memref.store %5, %A[%i, %j] : memref<40000x40000xf32>
+    %4 = memref.load %A[%i, %j] : memref<40000x40000xf32>
+    %5 = arith.addf %3, %4 : f32
+    memref.store %5, %A[%i, %j] : memref<40000x40000xf32>
   }
 
   memref.dealloc %A : memref<40000x40000xf32>
@@ -136,3 +136,21 @@ func.func @main() {
 }
 
 func.func private @printMemrefF32(memref<*xf32>) attributes { llvm.emit_c_interface }
+
+
+// func.func @main() {
+//   %step = arith.constant 1 : index
+//   %c1 = arith.constant 1 : index
+//   %c2 = arith.constant 10 : index
+//   %value = arith.constant 10.21 : f32
+
+//   %A = memref.alloc() : memref<10xf32>
+
+//   scf.parallel (%i) = (%c1) to (%c2) step (%step) {
+//     memref.store %value, %A[%i] : memref<10xf32>
+//   }
+
+//   memref.dealloc %A : memref<10xf32>
+
+//   return
+// }

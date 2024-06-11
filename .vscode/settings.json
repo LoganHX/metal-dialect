@@ -24,6 +24,7 @@
         "istream": "cpp",
         "locale": "cpp",
         "thread": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "*.txt": "cpp"
     }
 }
