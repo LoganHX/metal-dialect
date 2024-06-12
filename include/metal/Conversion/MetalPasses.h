@@ -10,6 +10,11 @@
 #include "metal/IR/MetalDialect.h"
 #include "metal/IR/MetalOps.h"
 #include "mlir/Pass/Pass.h"
+
+#include "mlir/Dialect/GPU/IR/GPUDialect.h"
+#include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
+
+
 #include <memory>
 
 namespace mlir {

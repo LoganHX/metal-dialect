@@ -25,6 +25,7 @@
         "locale": "cpp",
         "thread": "cpp",
         "tuple": "cpp",
-        "*.txt": "cpp"
+        "*.txt": "cpp",
+        "memory": "cpp"
     }
 }
