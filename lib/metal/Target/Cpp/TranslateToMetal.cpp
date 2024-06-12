@@ -1031,7 +1031,7 @@ static LogicalResult printFunctionBody(MetalEmitter &emitter,
       bool trailingSemicolon =
           !isa<cf::CondBranchOp, emitc::DeclareFuncOp, emitc::ForOp,
                emitc::IfOp, emitc::LiteralOp, emitc::VerbatimOp, gpu::GPUFuncOp,
-               gpu::ModuleEndOp>(op);
+               gpu::ModuleEndOp, gpu::ThreadIdOp, gpu::BlockDimOp>(op);
 
       if (failed(emitter.emitOperation(
               op, /*trailingSemicolon=*/trailingSemicolon)))
@@ -1162,8 +1162,10 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
-  emitter.emitLinearIndex(storeOp.getLoc(), "gridSize.x", "gridSize.y", "gridSize.z",
-                          storeOp.getIndices());
+  emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x", "gridDim.y",
+                          "gridDim.z", storeOp.getIndices());
+  // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth,
+  //                         storeOp.getIndices());
   os << "]";
   os << " = ";
   os << emitter.getOrCreateName(storeOp.getOperand(0));
@@ -1220,6 +1222,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
+
   os << "_MetalCommandBufferCommit(_"
         "MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"
      << functionOp.getKernelModuleName();
@@ -1230,6 +1233,17 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << ",";
   emitter.emitOperand(functionOp.getGridSizeZ());
   os << "))";
+
+  return success();
+}
+
+static LogicalResult printKernelSizeVariables(MetalEmitter &emitter) {
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+
+  os << ", uint3 id [[thread_position_in_grid]], uint3 gridDim "
+        "[[threads_per_grid]]"; // TODO forse sarebbe meglio creare questi tipi
+                                // unit3?
 
   return success();
 }
@@ -1249,6 +1263,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   Operation *operation = functionOp.getOperation();
   if (failed(printFunctionArgs(emitter, operation, functionOp.getArguments())))
     return failure();
+  if (failed(printKernelSizeVariables(emitter)))
+    return failure();
   os << ") {\n";
   if (failed(printFunctionBody(emitter, operation, functionOp.getBlocks())))
     return failure();
@@ -1259,36 +1275,39 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printAccessGPUIDDimensionOp(MetalEmitter &emitter,
                                                  OpResult result,
-                                                 gpu::Dimension dim) {
+                                                 gpu::Dimension dim,
+                                                 StringRef str) {
 
   if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
     return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "id." << dim;
+  os << str << "." << dim;
 
   return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter, gpu::ThreadIdOp op) {
-  return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
-                                     op.getDimension());
+  // return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
+  //                                    op.getDimension(), "id");
+  return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter, gpu::BlockIdOp op) {
   return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
-                                     op.getDimension());
+                                     op.getDimension(), "id");
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter, gpu::BlockDimOp op) {
-  return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
-                                     op.getDimension());
+  // return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
+  //                                    op.getDimension(), "blockDim");
+  return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter, gpu::GridDimOp op) {
   return printAccessGPUIDDimensionOp(emitter, op->getResult(0),
-                                     op.getDimension());
+                                     op.getDimension(), "gridDim");
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
@@ -1750,10 +1769,6 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
       llvm::TypeSwitch<Operation *, LogicalResult>(&op)
           // Builtin ops.
           .Case<ModuleOp>([&](auto op) { return printOperation(*this, op); })
-          // CF ops.
-          // .Case<cf::BranchOp, cf::CondBranchOp>(
-          //     [&](auto op) { return printOperation(*this, op); })
-          // EmitC ops.
           .Case<emitc::AddOp, emitc::ApplyOp, emitc::AssignOp,
                 emitc::BitwiseAndOp, emitc::BitwiseLeftShiftOp,
                 emitc::BitwiseNotOp, emitc::BitwiseOrOp,
@@ -1819,8 +1834,10 @@ LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
 LogicalResult MetalEmitter::emitType(Location loc, Type type) {
 
   if (auto memrefType = dyn_cast<MemRefType>(type)) {
-    emitType(loc, memrefType.getElementType());
-    return (os << "*"), success();
+    if (failed(emitType(loc, memrefType.getElementType())))
+      return failure();
+    os << "*";
+    return success();
   }
 
   if (auto iType = dyn_cast<IntegerType>(type)) {
@@ -1950,23 +1967,23 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc, int xSize, int ySize,
   if (indices.size() <= 0)
     return failure();
 
-  StringRef i = "0";
-  StringRef j = "0";
-  StringRef k = "0";
+  StringRef x = "0";
+  StringRef y = "0";
+  StringRef z = "0";
 
   if (indices.size() == 3) {
-    k = getOrCreateName(indices[2]);
+    z = getOrCreateName(indices[2]);
   }
   if (indices.size() >= 2) {
-    j = getOrCreateName(indices[1]);
+    y = getOrCreateName(indices[1]);
   }
   if (indices.size() >= 1) {
-    i = getOrCreateName(indices[0]);
+    x = getOrCreateName(indices[0]);
   }
   // return (z * xSize * ySize) + (y * xSize) + x;
 
-  return (os << "(" << k << " * " << xSize << " * " << ySize << ") + (" << j
-             << " * " << xSize << ") + " << i,
+  return (os << "(" << z << " * " << xSize << " * " << ySize << ") + (" << y
+             << " * " << xSize << ") + " << x,
           success());
 }
 
@@ -1978,23 +1995,23 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc, StringRef xSize,
   if (indices.size() <= 0)
     return failure();
 
-  StringRef i = "0";
-  StringRef j = "0";
-  StringRef k = "0";
+  StringRef x = "0";
+  StringRef y = "0";
+  StringRef z = "0";
 
   if (indices.size() == 3) {
-    k = getOrCreateName(indices[2]);
+    z = getOrCreateName(indices[2]);
   }
   if (indices.size() >= 2) {
-    j = getOrCreateName(indices[1]);
+    y = getOrCreateName(indices[1]);
   }
   if (indices.size() >= 1) {
-    i = getOrCreateName(indices[0]);
+    x = getOrCreateName(indices[0]);
   }
   // return (z * xSize * ySize) + (y * xSize) + x;
 
-  return (os << "(" << k << " * " << xSize << " * " << ySize << ") + (" << j
-             << " * " << xSize << ") + " << i,
+  return (os << "(" << z << " * " << xSize << " * " << ySize << ") + (" << y
+             << " * " << xSize << ") + " << x,
           success());
 }
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
