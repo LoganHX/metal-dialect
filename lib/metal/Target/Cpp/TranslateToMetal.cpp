@@ -1222,7 +1222,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-
+  emitter.emitType(functionOp.getLoc(), functionOp.getGridSizeX().getType());
   os << "_MetalCommandBufferCommit(_"
         "MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"
      << functionOp.getKernelModuleName();
@@ -1233,6 +1233,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << ",";
   emitter.emitOperand(functionOp.getGridSizeZ());
   os << "))";
+
+  
 
   return success();
 }

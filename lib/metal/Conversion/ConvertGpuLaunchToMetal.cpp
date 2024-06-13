@@ -4,7 +4,10 @@
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 
+
+#include "mlir/Dialect/Arith/IR/Arith.h"
 
 #include "mlir/Transforms/DialectConversion.h"
 #include <iostream>
@@ -25,10 +28,12 @@ struct ConvertGpuLaunchToMetal
     ConversionTarget target(getContext());
 
     target.addLegalDialect<emitc::EmitCDialect>();
+    target.addLegalDialect<arith::ArithDialect>();
     target.addLegalDialect<MetalDialect>();
     target.addLegalDialect<gpu::GPUDialect>();
+    
+    target.addIllegalDialect<memref::MemRefDialect>();
     target.addIllegalOp<gpu::LaunchFuncOp>();
-
 
     RewritePatternSet patterns(&getContext());
     mlir::metal::populateGpuLaunchToMetalConversionPatterns(patterns, &getContext());

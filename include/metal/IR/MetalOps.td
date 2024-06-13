@@ -122,32 +122,32 @@ def ReturnOp : Metal_Op<"return", [Pure, Terminator]> {
 // StoreOp
 //===----------------------------------------------------------------------===//
 
-// def StoreOp : Metal_Op<"store"> {
-//   let summary = "Store operation";
+def StoreOp : Metal_Op<"store"> {
+  let summary = "Store operation";
 
-//   let arguments = (ins Metal_Type:$value, Metal_MemRefType:$memref, UI32:$index);
+  let arguments = (ins Metal_Type:$value, Index:$buffer, UI32:$index);
 
-//   let hasVerifier = 1;
+  let hasVerifier = 0; //TODO scrivere i verifiers
 
-//   let assemblyFormat = "$value `,` $memref `[` $index `]`  attr-dict `:` type(operands)";
-// }
+  let assemblyFormat = "$value `,` $buffer `[` $index `]`  attr-dict `:` type(operands)";
+}
 
 //===----------------------------------------------------------------------===//
 // GetElementOp
 //===----------------------------------------------------------------------===//
 
-// def GetElementOp : Metal_Op<"get_element", [Pure]> {
-//   let summary = "Get element operation";
+def GetElementOp : Metal_Op<"get_element", [Pure]> {
+  let summary = "Get element operation";
 
-//   let arguments = (ins Metal_MemRefType:$memref, UI32:$index);
-//   let results = (outs Metal_Type:$result);
+  let arguments = (ins Index:$buffer, UI32:$index);
+  let results = (outs Metal_Type:$result);
 
-//   let builders = [OpBuilder<(ins "Value":$memref, "Value":$index)>];
+  let builders = [OpBuilder<(ins "Value":$buffer, "Value":$index)>];
 
-//   let hasVerifier = 1;
+  let hasVerifier = 0; //TODO scrivere i verifiers
 
-//   let assemblyFormat = "$memref `[` $index `]`  attr-dict `:` functional-type(operands, results)";
-// }
+  let assemblyFormat = "$buffer `[` $index `]`  attr-dict `:` functional-type(operands, results)";
+}
 
 //===----------------------------------------------------------------------===//
 // ThreadIdOp
@@ -443,5 +443,7 @@ def CommandBufferWaitUntilCompletedOp : Metal_Op<"command_buffer_wait_until_comp
 
   let assemblyFormat = "$commandBuffer attr-dict `:` type(operands)";
 }
+
+
 
 #endif // METAL_OPS

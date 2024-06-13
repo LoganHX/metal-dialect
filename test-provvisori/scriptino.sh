@@ -1,4 +1,6 @@
 #!/bin/bash
+
+#Scriptino
 set -x
 
 start="test-provvisori/starting_point.mlir"

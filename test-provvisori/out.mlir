@@ -9,7 +9,7 @@ void main() {
   v6[(0 * gridDim.x * gridDim.y) + (0 * gridDim.x) + v3] = v5;
   size_t v7 = 1;
   size_t v8 = 10;
-  _MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel",v8,v7,v7));
+  size_t_MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel",v8,v7,v7));
   _MetalRelease(v6);
   return;
 }
