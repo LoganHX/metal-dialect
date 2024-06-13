@@ -35,8 +35,8 @@ using namespace mlir;
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
 
-mlir::metal::DeviceMakeDefaultOp
-getDevice(ConversionPatternRewriter &rewriter, mlir::Location loc) {
+mlir::metal::DeviceMakeDefaultOp getDevice(ConversionPatternRewriter &rewriter,
+                                           mlir::Location loc) {
   if (device)
     return device;
   device = rewriter.create<mlir::metal::DeviceMakeDefaultOp>(loc);
@@ -61,11 +61,13 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   LogicalResult
   matchAndRewrite(memref::StoreOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
+    op.getMemRef().dump();
     auto intValue = rewriter.create<emitc::ConstantOp>(
-          op.getLoc(), rewriter.getIntegerType(32, false), rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 0));
-          
-    auto rep = rewriter.create<mlir::metal::StoreOp>(
-      op.getLoc(),  adaptor.getValue(), adaptor.getMemref(), intValue );
+        op.getLoc(), rewriter.getIntegerType(32, false),
+        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 0));
+
+    rewriter.create<mlir::metal::StoreOp>(
+        op.getLoc(), adaptor.getValue(), adaptor.getMemref(), intValue);
 
     rewriter.eraseOp(op);
     return success();
@@ -82,11 +84,14 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
   matchAndRewrite(memref::AllocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto boolValue = rewriter.create<emitc::ConstantOp>(
-          op.getLoc(), rewriter.getI1Type(), rewriter.getIntegerAttr(rewriter.getI1Type(), 1));
+        op.getLoc(), rewriter.getI1Type(),
+        rewriter.getIntegerAttr(rewriter.getI1Type(), 1));
     auto intValue = rewriter.create<emitc::ConstantOp>(
-          op.getLoc(), rewriter.getI64Type(), rewriter.getIntegerAttr(rewriter.getI64Type(), 64));
+        op.getLoc(), rewriter.getI64Type(),
+        rewriter.getIntegerAttr(rewriter.getI64Type(), 64));
     auto rep = rewriter.create<mlir::metal::DeviceMakeBufferOp>(
-            op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue, intValue, intValue);
+        op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue, intValue,
+        intValue);
     rewriter.replaceOp(op, rep);
     return success();
   }
@@ -109,7 +114,6 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
     // TODO sarebbe meglio modificare metal::CommandQueueMakeCommandBufferOp
     //  in modo che accetti ConstantIndex come dimensioni X, Y e Z.
 
-
     if (dimX.getType() != rewriter.getI64Type()) {
       // servirebbe un check per vedere se dimX è un emit::ConstantOp
       dimX = rewriter.create<emitc::CastOp>(op.getLoc(), rewriter.getI64Type(),
@@ -128,13 +132,24 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
 
     auto commandBuffer =
         rewriter.create<mlir::metal::CommandQueueMakeCommandBufferOp>(
-            op.getLoc(), getQueue(rewriter, op.getLoc()), op.getKernelModuleName(), dimX, dimY,
-            dimZ);
+            op.getLoc(), getQueue(rewriter, op.getLoc()),
+            op.getKernelModuleName(), dimX, dimY, dimZ);
+    
 
-    auto intValue = rewriter.create<emitc::ConstantOp>(
-          op.getLoc(), rewriter.getI64Type(), rewriter.getIntegerAttr(rewriter.getI64Type(), 0));
-    rewriter.create<mlir::metal::CommandBufferAddBufferOp>(
-            op.getLoc(), commandBuffer, adaptor.getKernelOperands().back(), intValue);
+    for (size_t i = 0; i < adaptor.getKernelOperands().size(); i++) {
+      if (isa<MemRefType>(op.getKernelOperands()[i].getType())) {
+        auto intValue = rewriter.create<emitc::ConstantOp>(
+            op.getLoc(), rewriter.getI64Type(),
+            rewriter.getIntegerAttr(rewriter.getI64Type(), (int64_t)i));
+        rewriter.create<mlir::metal::CommandBufferAddBufferOp>(
+            op.getLoc(), commandBuffer, adaptor.getKernelOperands()[i],
+            intValue);
+      }
+    }
+
+    rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(), commandBuffer);
+    rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(op.getLoc(), commandBuffer);
+    rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), commandBuffer);
 
     rewriter.eraseOp(op);
     return success();
