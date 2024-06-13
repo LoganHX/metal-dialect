@@ -61,13 +61,19 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   LogicalResult
   matchAndRewrite(memref::StoreOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    op.getMemRef().dump();
+
+
+    auto dimX = rewriter.create<emitc::ConstantOp>(
+        op.getLoc(), rewriter.getIntegerType(32, false),
+        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), op.getMemRefType().getDimSize(0)));
+    dimX.dump();
+
     auto intValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getIntegerType(32, false),
         rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 0));
 
-    rewriter.create<mlir::metal::StoreOp>(
-        op.getLoc(), adaptor.getValue(), adaptor.getMemref(), intValue);
+    rewriter.create<mlir::metal::StoreOp>(op.getLoc(), adaptor.getValue(),
+                                          adaptor.getMemref(), intValue);
 
     rewriter.eraseOp(op);
     return success();
@@ -107,9 +113,9 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
   matchAndRewrite(gpu::LaunchFuncOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto dimX = adaptor.getBlockSizeX();
-    auto dimY = adaptor.getBlockSizeY();
-    auto dimZ = adaptor.getBlockSizeZ();
+    auto dimX = adaptor.getGridSizeX();
+    auto dimY = adaptor.getGridSizeY();
+    auto dimZ = adaptor.getGridSizeZ();
 
     // TODO sarebbe meglio modificare metal::CommandQueueMakeCommandBufferOp
     //  in modo che accetti ConstantIndex come dimensioni X, Y e Z.
@@ -134,7 +140,6 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
         rewriter.create<mlir::metal::CommandQueueMakeCommandBufferOp>(
             op.getLoc(), getQueue(rewriter, op.getLoc()),
             op.getKernelModuleName(), dimX, dimY, dimZ);
-    
 
     for (size_t i = 0; i < adaptor.getKernelOperands().size(); i++) {
       if (isa<MemRefType>(op.getKernelOperands()[i].getType())) {
@@ -147,8 +152,10 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
       }
     }
 
-    rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(), commandBuffer);
-    rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(op.getLoc(), commandBuffer);
+    rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(),
+                                                        commandBuffer);
+    rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(
+        op.getLoc(), commandBuffer);
     rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), commandBuffer);
 
     rewriter.eraseOp(op);
