@@ -7,9 +7,11 @@ void main() {
   float* v6;
   v6 = _MetalDeviceMakeBuffer(device, false, 10, 4);
   v6[(0 * gridDim.x * gridDim.y) + (0 * gridDim.x) + v3] = v5;
-  size_t v7 = 1;
-  size_t v8 = 10;
-  size_t_MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel",v8,v7,v7));
+  float v7;
+  v7 = [(0 * 10 * 1) + (0 * 10) + v3];
+  size_t v8 = 1;
+  size_t v9 = 10;
+  size_t_MetalCommandBufferCommit(_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"main_kernel",v9,v8,v8));
   _MetalRelease(v6);
   return;
 }

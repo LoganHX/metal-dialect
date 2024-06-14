@@ -35,6 +35,38 @@ using namespace mlir;
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
 
+// TODO genero troppe costanti. Constant Folding? Da approfondire.
+
+emitc::ConstantOp getMemrefDim(Location loc,
+                               ConversionPatternRewriter &rewriter,
+                               MemRefType mt, size_t dim) {
+  if (mt.getShape().size() > 3)
+    return nullptr; // TODO dovrei emettere un errore
+
+  if (dim > mt.getShape().size() - 1)
+    return rewriter.create<emitc::ConstantOp>(
+        loc, rewriter.getIntegerType(32, false),
+        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 1));
+
+  return rewriter.create<emitc::ConstantOp>(
+      loc, rewriter.getIntegerType(32, false),
+      rewriter.getIntegerAttr(rewriter.getIntegerType(32, false),
+                              mt.getDimSize(dim)));
+}
+
+mlir::Value getIndex(Location loc, ConversionPatternRewriter &rewriter,
+                           ValueRange indices, size_t dim) {
+  if (indices.size() > 3)
+    return nullptr; // TODO dovrei emettere un errore
+
+  if (dim > indices.size() - 1)
+    return rewriter.create<emitc::ConstantOp>(
+        loc, rewriter.getIntegerType(32, false),
+        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 0));
+
+  return indices[dim];
+}
+
 mlir::metal::DeviceMakeDefaultOp getDevice(ConversionPatternRewriter &rewriter,
                                            mlir::Location loc) {
   if (device)
@@ -52,6 +84,45 @@ getQueue(ConversionPatternRewriter &rewriter, mlir::Location loc) {
   return queue;
 }
 
+struct ConvertDeallocOp : public OpConversionPattern<memref::DeallocOp> {
+  ConvertDeallocOp(mlir::MLIRContext *context)
+      : OpConversionPattern<memref::DeallocOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(memref::DeallocOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), adaptor.getMemref());
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
+  ConvertLoadOp(mlir::MLIRContext *context)
+      : OpConversionPattern<memref::LoadOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(memref::LoadOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+ adaptor.getMemref().getType().dump();
+   rewriter.create<mlir::metal::GetElementOp>(
+        op.getLoc(), op.getMemref().getType().getElementType(), adaptor.getMemref(),
+        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
+        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
+        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 2),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 0),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 1),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 2));
+
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   ConvertStoreOp(mlir::MLIRContext *context)
       : OpConversionPattern<memref::StoreOp>(context) {}
@@ -62,18 +133,14 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   matchAndRewrite(memref::StoreOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-
-    auto dimX = rewriter.create<emitc::ConstantOp>(
-        op.getLoc(), rewriter.getIntegerType(32, false),
-        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), op.getMemRefType().getDimSize(0)));
-    dimX.dump();
-
-    auto intValue = rewriter.create<emitc::ConstantOp>(
-        op.getLoc(), rewriter.getIntegerType(32, false),
-        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 0));
-
-    rewriter.create<mlir::metal::StoreOp>(op.getLoc(), adaptor.getValue(),
-                                          adaptor.getMemref(), intValue);
+    rewriter.create<mlir::metal::StoreOp>(
+        op.getLoc(), adaptor.getValue(), adaptor.getMemref(),
+        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
+        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
+        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 2),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 0),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 1),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 2));
 
     rewriter.eraseOp(op);
     return success();
@@ -168,5 +235,6 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
 void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
     RewritePatternSet &patterns, MLIRContext *ctx) {
 
-  patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp>(ctx);
+  patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
+                  ConvertDeallocOp, ConvertLoadOp>(ctx);
 }

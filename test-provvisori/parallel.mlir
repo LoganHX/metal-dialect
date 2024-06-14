@@ -7,10 +7,11 @@ module attributes {gpu.container_module} {
     %4 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
     %alloc = memref.alloc() : memref<10xf32>
     memref.store %4, %alloc[%2] : memref<10xf32>
-    %5 = "emitc.constant"() <{value = 1 : index}> : () -> index
-    %6 = "emitc.constant"() <{value = 10 : index}> : () -> index
-    gpu.launch_func  @main_kernel::@main_kernel blocks in (%6, %5, %5) threads in (%5, %5, %5)  args(%alloc : memref<10xf32>)
-    //memref.dealloc %alloc : memref<10xf32>
+    %5 = memref.load %alloc[%2] : memref<10xf32>
+    %6 = "emitc.constant"() <{value = 1 : index}> : () -> index
+    %7 = "emitc.constant"() <{value = 10 : index}> : () -> index
+    gpu.launch_func  @main_kernel::@main_kernel blocks in (%7, %6, %6) threads in (%6, %6, %6)  args(%alloc : memref<10xf32>)
+    memref.dealloc %alloc : memref<10xf32>
     return
   }
   gpu.module @main_kernel {

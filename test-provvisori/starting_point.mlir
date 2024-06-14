@@ -1,3 +1,5 @@
+//starting_point.mlir
+
 // func.func @parallel_loop() {
 //   %step = arith.constant 1 : index
 //   %start = arith.constant 0 : index
@@ -147,6 +149,7 @@ func.func @main() {
   
   %A = memref.alloc() : memref<10xf32>
   memref.store %value, %A[%c44] : memref<10xf32>
+  %tot = memref.load %A[%c44] : memref<10xf32>
 
   scf.parallel (%i) = (%c1) to (%c2) step (%step) {
     memref.store %value, %A[%i] : memref<10xf32>

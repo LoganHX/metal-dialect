@@ -16,6 +16,7 @@ include "mlir/IR/BuiltinAttributeInterfaces.td"
 def Metal_Type : AnyTypeOf<[I1, UI8, UI16, UI32, UI64, SI8, SI16, SI32, SI64,
                             F16, F32]>;
 
+def Int_Type : AnyTypeOf<[I1, UI8, UI16, UI32, UI64, SI8, SI16, SI32, SI64, Index]>; 
 //===----------------------------------------------------------------------===//
 // ModuleOp
 //===----------------------------------------------------------------------===//
@@ -125,11 +126,14 @@ def ReturnOp : Metal_Op<"return", [Pure, Terminator]> {
 def StoreOp : Metal_Op<"store"> {
   let summary = "Store operation";
 
-  let arguments = (ins Metal_Type:$value, Index:$buffer, UI32:$index);
+  let arguments = (ins Metal_Type:$value, Index:$buffer, Int_Type:$index_x, Int_Type:$index_y, Int_Type:$index_z, UI32:$xSize, UI32:$ySize, UI32:$zSize);
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  let assemblyFormat = "$value `,` $buffer `[` $index `]`  attr-dict `:` type(operands)";
+  //TODO non so se è stata una scelta saggia alleggerire i constraints sui tipi degli index_x, index_y e index_z da UI32 a Int_Type.
+  //Andrebbe visto qualche esempio "ufficiale".
+
+  let assemblyFormat = "$value `,` $buffer `[` $index_x `:`$xSize `]` `[` $index_y `:`$ySize `]` `[` $index_z `:`$zSize `]` attr-dict `:` type(operands)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -139,14 +143,14 @@ def StoreOp : Metal_Op<"store"> {
 def GetElementOp : Metal_Op<"get_element", [Pure]> {
   let summary = "Get element operation";
 
-  let arguments = (ins Index:$buffer, UI32:$index);
+  let arguments = (ins Index:$buffer, Int_Type:$index_x, Int_Type:$index_y, Int_Type:$index_z, UI32:$xSize, UI32:$ySize, UI32:$zSize);
   let results = (outs Metal_Type:$result);
 
-  let builders = [OpBuilder<(ins "Value":$buffer, "Value":$index)>];
+  //let builders = [OpBuilder<(ins "Value":$buffer, "Value":$index)>];
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  let assemblyFormat = "$buffer `[` $index `]`  attr-dict `:` functional-type(operands, results)";
+  let assemblyFormat = "$buffer `[` $index_x `:`$xSize `]` `[` $index_y `:`$ySize `]` `[` $index_z `:`$zSize `]` attr-dict `:` functional-type(operands, results)";
 }
 
 //===----------------------------------------------------------------------===//
