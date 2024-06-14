@@ -147,15 +147,17 @@ func.func @main() {
   %c2 = arith.constant 10 : index
   %value = arith.constant 10.21 : f32
   
-  %A = memref.alloc() : memref<10xf32>
-  memref.store %value, %A[%c44] : memref<10xf32>
-  %tot = memref.load %A[%c44] : memref<10xf32>
+  %A = memref.alloc() : memref<42xf32>
+  memref.store %value, %A[%c44] : memref<42xf32>
+  %tot = memref.load %A[%c44] : memref<42xf32>
 
   scf.parallel (%i) = (%c1) to (%c2) step (%step) {
-    memref.store %value, %A[%i] : memref<10xf32>
+    memref.store %value, %A[%i] : memref<42xf32>
+    %tra = memref.load %A[%c44] : memref<42xf32>
+
   }
 
-  memref.dealloc %A : memref<10xf32>
+  memref.dealloc %A : memref<42xf32>
 
   return
 }

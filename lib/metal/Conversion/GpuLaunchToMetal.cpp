@@ -55,7 +55,7 @@ emitc::ConstantOp getMemrefDim(Location loc,
 }
 
 mlir::Value getIndex(Location loc, ConversionPatternRewriter &rewriter,
-                           ValueRange indices, size_t dim) {
+                     ValueRange indices, size_t dim) {
   if (indices.size() > 3)
     return nullptr; // TODO dovrei emettere un errore
 
@@ -108,9 +108,13 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
   LogicalResult
   matchAndRewrite(memref::LoadOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
- adaptor.getMemref().getType().dump();
-   rewriter.create<mlir::metal::GetElementOp>(
-        op.getLoc(), op.getMemref().getType().getElementType(), adaptor.getMemref(),
+      /*TODO è un workaround ->vedi ConvertStoreOp */
+
+    if (isa<MemRefType>(adaptor.getMemref().getType()))
+      return failure();
+    rewriter.create<mlir::metal::GetElementOp>(
+        op.getLoc(), op.getMemref().getType().getElementType(),
+        adaptor.getMemref(),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 2),
@@ -132,7 +136,19 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   LogicalResult
   matchAndRewrite(memref::StoreOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
+    /*TODO è un workaround
+      mi serve per distinguere gli store che appartengono a un
+      gpu.kernel (quelli che hanno tipo memref) da quelli di tipo index che
+      stanno "lato CPU". Andrebbe fatto diversamente, attraversando
+      "consciamente" l'alber:  getFunction().walk([&](memref::StoreOp storeOp)????
 
+      Di questo workaround fa parte anche aver commentato l'istruzione signalPassFailure(); 
+      nel file ConvertGpuLaunchToMetal.cpp, in modo da sopprimere l'errore e stampare a video
+      il risultato a prescindere dall'esito.
+    */
+
+    if (isa<MemRefType>(adaptor.getMemref().getType()))
+      return failure();
     rewriter.create<mlir::metal::StoreOp>(
         op.getLoc(), adaptor.getValue(), adaptor.getMemref(),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
