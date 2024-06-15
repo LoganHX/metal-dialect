@@ -35,8 +35,6 @@ using namespace mlir;
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
 
-// TODO genero troppe costanti. Constant Folding? Da approfondire.
-
 emitc::ConstantOp getMemrefDim(Location loc,
                                ConversionPatternRewriter &rewriter,
                                MemRefType mt, size_t dim) {
@@ -108,10 +106,7 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
   LogicalResult
   matchAndRewrite(memref::LoadOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-      /*TODO è un workaround ->vedi ConvertStoreOp */
 
-    if (isa<MemRefType>(adaptor.getMemref().getType()))
-      return failure();
     rewriter.create<mlir::metal::GetElementOp>(
         op.getLoc(), op.getMemref().getType().getElementType(),
         adaptor.getMemref(),
@@ -136,19 +131,7 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   LogicalResult
   matchAndRewrite(memref::StoreOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    /*TODO è un workaround
-      mi serve per distinguere gli store che appartengono a un
-      gpu.kernel (quelli che hanno tipo memref) da quelli di tipo index che
-      stanno "lato CPU". Andrebbe fatto diversamente, attraversando
-      "consciamente" l'alber:  getFunction().walk([&](memref::StoreOp storeOp)????
 
-      Di questo workaround fa parte anche aver commentato l'istruzione signalPassFailure(); 
-      nel file ConvertGpuLaunchToMetal.cpp, in modo da sopprimere l'errore e stampare a video
-      il risultato a prescindere dall'esito.
-    */
-
-    if (isa<MemRefType>(adaptor.getMemref().getType()))
-      return failure();
     rewriter.create<mlir::metal::StoreOp>(
         op.getLoc(), adaptor.getValue(), adaptor.getMemref(),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
