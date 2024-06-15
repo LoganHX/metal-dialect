@@ -7,9 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "metal/IR/MetalDialect.h"
+#include "metal/IR/MetalOps.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dialect.h"
@@ -444,13 +447,6 @@ static LogicalResult printOperation(MetalEmitter &emitter, emitc::AddOp addOp) {
 
   return printBinaryOperation(emitter, operation, "+");
 }
-
-// static LogicalResult printOperation(MetalEmitter &emitter,
-// mlir::metal::BinaryExpOp addOp) {
-//   Operation *operation = addOp.getOperation();
-//   std::cout << "\n\nTRAPANI\n\n";
-//   return printBinaryOperation(emitter, operation, "+");
-// }
 
 static LogicalResult printOperation(MetalEmitter &emitter, emitc::DivOp divOp) {
   Operation *operation = divOp.getOperation();
@@ -1077,25 +1073,6 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
-                                    memref::AllocOp allocOp) {
-
-  OpResult result = allocOp->getResult(0);
-
-  emitter.emitVariableAssignmentAndDeclaration(result);
-
-  MetalEmitter::Scope scope(emitter);
-  raw_indented_ostream &os = emitter.ostream();
-
-  os << "_MetalDeviceMakeBuffer(device, false, ";
-  emitter.emitMemRefSize(allocOp.getLoc(), allocOp.getType());
-  os << ", ";
-  emitter.emitTypeSize(allocOp.getLoc(), allocOp.getType().getElementType());
-  os << ")";
-
-  return success();
-}
-
-static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::DeallocOp deallocOp) {
 
   MetalEmitter::Scope scope(emitter);
@@ -1198,6 +1175,94 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << "]";
   return success();
 }
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::DeviceMakeDefaultOp op) {
+  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalDeviceMakeDefaultOp()";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::DeviceMakeCommandQueueOp op) {
+  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalDeviceMakeCommandQueueOp(";
+  os << emitter.getOrCreateName(op.getDevice());
+  os << ")";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::CommandQueueMakeCommandBufferOp op) {
+  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalDeviceMakeCommandQueueOp(";
+  os << emitter.getOrCreateName(op.getCommandQueue());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getDimX());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getDimY());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getDimZ());
+  os << ", ";
+  os << op.getFunctionName();
+  os << ")";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::DeviceMakeBufferOp op) {
+  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+
+  os << "_MetalDeviceMakeBufferOp(";
+  os << emitter.getOrCreateName(op.getDevice());
+  os << ")";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::CommandBufferCommitOp op) {
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalCommandBufferCommit(";
+  os << emitter.getOrCreateName(op.getCommandBuffer());
+  os << ")";
+  return success();
+}
+
+static LogicalResult
+printOperation(MetalEmitter &emitter,
+               metal::CommandBufferWaitUntilCompletedOp op) {
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalCommandBufferWaitUntilCompletedOp(";
+  os << emitter.getOrCreateName(op.getCommandBuffer());
+  os << ")";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::ReleaseOp op) {
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalRelease(";
+  os << emitter.getOrCreateName(op.getRef());
+  os << ")";
+  return success();
+}
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::GPUModuleOp moduleOp) {
@@ -1213,7 +1278,6 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     gpu::ModuleEndOp moduleOp) {
-
   return success();
 }
 
@@ -1233,8 +1297,6 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << ",";
   emitter.emitOperand(functionOp.getGridSizeZ());
   os << "))";
-
-  
 
   return success();
 }
@@ -1792,8 +1854,13 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
                 gpu::ThreadIdOp, gpu::BlockIdOp, gpu::GridDimOp,
                 gpu::BlockDimOp, gpu::ReturnOp, gpu::LaunchFuncOp>(
               [&](auto op) { return printOperation(*this, op); })
-          .Case<memref::AllocOp, memref::DeallocOp, memref::StoreOp,
-                memref::LoadOp>(
+          // metal ops.
+          .Case<metal::DeviceMakeDefaultOp, metal::DeviceMakeBufferOp,
+                metal::DeviceMakeCommandQueueOp, metal::CommandBufferCommitOp,
+                metal::CommandQueueMakeCommandBufferOp,
+                metal::CommandBufferWaitUntilCompletedOp, metal::ReleaseOp>(
+              [&](auto op) { return printOperation(*this, op); })
+          .Case<memref::DeallocOp, memref::StoreOp, memref::LoadOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<emitc::LiteralOp>([&](auto op) { return success(); })
           .Default([&](Operation *) {

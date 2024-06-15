@@ -546,9 +546,9 @@ void CommandQueueMakeCommandBufferOp::build(OpBuilder &builder,
 void CommandQueueMakeCommandBufferOp::print(mlir::OpAsmPrinter &printer) {
   printer << " " << getFunctionName() << " ";
   printer << getCommandQueue() << ", ";
-  printer << getWidth() << ", ";
-  printer << getHeight() << ", ";
-  printer << getDepth();
+  printer << getDimX() << ", ";
+  printer << getDimY() << ", ";
+  printer << getDimZ();
   printer << ": (" << getOperandTypes() << ") -> ";
   printer.printType(getResult().getType());
 }

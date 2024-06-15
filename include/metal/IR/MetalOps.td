@@ -407,13 +407,13 @@ def BufferGetContentsOp : Metal_Op<"buffer_get_contents"> {
 def CommandQueueMakeCommandBufferOp : Metal_Op<"command_queue_make_command_buffer"> {
   let summary = "Command queue make command buffer operation";
 
-  let arguments = (ins Index:$commandQueue, I64:$width, I64:$height, I64:$depth,
+  let arguments = (ins Index:$commandQueue, I64:$dimX, I64:$dimY, I64:$dimZ,
                        StrAttr:$functionName);
   let results = (outs Index);
 
   let builders = [
     OpBuilder<(ins "Value":$commandQueue, "StringRef":$functionName,
-                      "Value":$width, "Value":$height, "Value":$depth)>
+                      "Value":$dimX, "Value":$dimY, "Value":$dimZ)>
   ];
 
   let hasCustomAssemblyFormat = 1;

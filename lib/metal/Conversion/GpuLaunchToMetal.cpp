@@ -35,6 +35,8 @@ using namespace mlir;
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
 
+
+//TODO dovrei convertire returnOp in modo che creasse anche le metal::ReleaseOp per il device e per la queue
 emitc::ConstantOp getMemrefDim(Location loc,
                                ConversionPatternRewriter &rewriter,
                                MemRefType mt, size_t dim) {
