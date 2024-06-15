@@ -51,7 +51,7 @@ struct ConvertGpuLaunchToMetal
     RewritePatternSet patterns(&getContext());
     mlir::metal::populateGpuLaunchToMetalConversionPatterns(patterns,
                                                             &getContext());
-
+                                                            
     FrozenRewritePatternSet patternSet(std::move(patterns));
     if (failed(applyPartialConversion(getOperation(), target, patternSet)))
       signalPassFailure();
