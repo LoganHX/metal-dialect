@@ -82,7 +82,7 @@ StringRef getTypeString(Type type) {
     }
   }
   if (auto iType = dyn_cast<IndexType>(type))
-    return  "size_t";
+    return "size_t";
   // if (auto tType = dyn_cast<TensorType>(type)) {
   //   if (!tType.hasRank())
   //     return emitError(loc, "cannot emit unranked tensor type");

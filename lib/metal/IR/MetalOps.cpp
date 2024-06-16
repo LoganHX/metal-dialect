@@ -153,7 +153,7 @@ mlir::ParseResult KernelOp::parse(mlir::OpAsmParser &parser,
 //===----------------------------------------------------------------------===//
 // Check Index
 //===----------------------------------------------------------------------===//
-//TODO cosa fa?
+// TODO cosa fa?
 // static mlir::LogicalResult
 // checkIndex(mlir::Operation *op, MetalMemRefType memRef, mlir::Value index) {
 //   if (auto constantOp = index.getDefiningOp<ConstantOp>()) {
@@ -255,7 +255,8 @@ mlir::LogicalResult ThreadIdOp::verify() {
 //   case OP::minusOp:
 //     if (argType.isInteger(1) ||
 //         (!argType.isSignedInteger() && !argType.isF16() && !argType.isF32()))
-//       return emitOpError() << "argument type must be signed integer or float";
+//       return emitOpError() << "argument type must be signed integer or
+//       float";
 //     break;
 //   }
 //   return mlir::success();
@@ -317,7 +318,8 @@ mlir::LogicalResult ThreadIdOp::verify() {
 //     break;
 //   }
 
-//   auto attr = builder.getI64IntegerAttr(static_cast<int64_t>(binaryOperator));
+//   auto attr =
+//   builder.getI64IntegerAttr(static_cast<int64_t>(binaryOperator));
 //   result.addAttribute("binaryOperator", attr);
 //   result.addOperands(lhs);
 //   result.addOperands(rhs);
@@ -425,7 +427,8 @@ mlir::LogicalResult ThreadIdOp::verify() {
 // auto WhileOp::build(
 //     mlir::OpBuilder &builder, mlir::OperationState &result,
 //     function_ref<void(mlir::OpBuilder &, mlir::Location)> conditionBuilder,
-//     function_ref<void(mlir::OpBuilder &, mlir::Location)> bodyBuilder) -> void {
+//     function_ref<void(mlir::OpBuilder &, mlir::Location)> bodyBuilder) ->
+//     void {
 //   result.addTypes(std::nullopt);
 //   result.addOperands(std::nullopt);
 
@@ -496,15 +499,15 @@ void DeviceMakeCommandQueueOp::build(OpBuilder &builder, OperationState &result,
 
 void DeviceMakeBufferOp::build(OpBuilder &builder, OperationState &result,
                                Value device, Value isStorageModeManaged,
-                               Value dimX, Value dimY, Value dimZ, StringRef stringType) {
+                               Value dimX, Value dimY, Value dimZ,
+                               StringRef stringType) {
   result.addOperands(device);
   result.addOperands(isStorageModeManaged);
   result.addOperands(dimX);
   result.addOperands(dimY);
   result.addOperands(dimZ);
-
-result.addAttribute("stringType", builder.getStringAttr(stringType));  
-result.addTypes(builder.getIndexType());
+  result.addAttribute("stringType", builder.getStringAttr(stringType));
+  result.addTypes(builder.getIndexType());
 };
 
 //===----------------------------------------------------------------------===//
