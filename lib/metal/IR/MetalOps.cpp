@@ -496,10 +496,13 @@ void DeviceMakeCommandQueueOp::build(OpBuilder &builder, OperationState &result,
 
 void DeviceMakeBufferOp::build(OpBuilder &builder, OperationState &result,
                                Value device, Value isStorageModeManaged,
-                               Value count, Value sizeType) {
+                               Value dimX, Value dimY, Value dimZ, Value sizeType) {
   result.addOperands(device);
   result.addOperands(isStorageModeManaged);
-  result.addOperands(count);
+  result.addOperands(dimX);
+  result.addOperands(dimY);
+  result.addOperands(dimZ);
+
   result.addOperands(sizeType);
   result.addTypes(builder.getIndexType());
 };

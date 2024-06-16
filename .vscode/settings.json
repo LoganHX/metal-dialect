@@ -77,6 +77,8 @@
         "variant": "cpp",
         "algorithm": "cpp",
         "execution": "cpp",
-        "print": "cpp"
+        "print": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp"
     }
 }

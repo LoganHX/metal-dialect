@@ -35,23 +35,20 @@ using namespace mlir;
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
 
-
-//TODO dovrei convertire returnOp in modo che creasse anche le metal::ReleaseOp per il device e per la queue
+// TODO dovrei convertire returnOp in modo che creasse anche le metal::ReleaseOp
+// per il device e per la queue
 emitc::ConstantOp getMemrefDim(Location loc,
                                ConversionPatternRewriter &rewriter,
-                               MemRefType mt, size_t dim) {
+                               MemRefType mt, Type type, size_t dim) {
   if (mt.getShape().size() > 3)
     return nullptr; // TODO dovrei emettere un errore
 
   if (dim > mt.getShape().size() - 1)
-    return rewriter.create<emitc::ConstantOp>(
-        loc, rewriter.getIntegerType(32, false),
-        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 1));
+    return rewriter.create<emitc::ConstantOp>(loc, type,
+                                              rewriter.getIntegerAttr(type, 1));
 
   return rewriter.create<emitc::ConstantOp>(
-      loc, rewriter.getIntegerType(32, false),
-      rewriter.getIntegerAttr(rewriter.getIntegerType(32, false),
-                              mt.getDimSize(dim)));
+      loc, type, rewriter.getIntegerAttr(type, mt.getDimSize(dim)));
 }
 
 mlir::Value getIndex(Location loc, ConversionPatternRewriter &rewriter,
@@ -115,9 +112,12 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 2),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 0),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 1),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 2));
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
+                     rewriter.getIntegerType(32, false), 0),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
+                     rewriter.getIntegerType(32, false), 1),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
+                     rewriter.getIntegerType(32, false), 2));
 
     rewriter.eraseOp(op);
     return success();
@@ -139,9 +139,12 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 2),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 0),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 1),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(), 2));
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
+                     rewriter.getIntegerType(32, false), 0),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
+                     rewriter.getIntegerType(32, false), 1),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
+                     rewriter.getIntegerType(32, false), 2));
 
     rewriter.eraseOp(op);
     return success();
@@ -160,13 +163,23 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
     auto boolValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getI1Type(),
         rewriter.getIntegerAttr(rewriter.getI1Type(), 1));
+    
     auto intValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getI64Type(),
-        rewriter.getIntegerAttr(rewriter.getI64Type(), 64));
+        rewriter.getIntegerAttr(rewriter.getI64Type(), 64)); //TODO è una costante (e secondo me ha più senso fornire un tipo qua)
+
     auto rep = rewriter.create<mlir::metal::DeviceMakeBufferOp>(
-        op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue, intValue,
+        op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue,
+        getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),
+                     rewriter.getI64Type(), 0),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),
+                     rewriter.getI64Type(), 1),
+        getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),
+                     rewriter.getI64Type(), 2),
         intValue);
+
     rewriter.replaceOp(op, rep);
+
     return success();
   }
 };
@@ -186,7 +199,7 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
     auto dimZ = adaptor.getGridSizeZ();
 
     // TODO sarebbe meglio modificare metal::CommandQueueMakeCommandBufferOp
-    //  in modo che accetti ConstantIndex come dimensioni X, Y e Z.
+    //  in modo che accetti ConstantIndex come dimensioni X, Y e Z?
 
     if (dimX.getType() != rewriter.getI64Type()) {
       // servirebbe un check per vedere se dimX è un emit::ConstantOp

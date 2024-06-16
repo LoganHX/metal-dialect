@@ -3,13 +3,16 @@ module attributes {gpu.container_module} {
     %0 = "emitc.constant"() <{value = 1 : index}> : () -> index
     %1 = "emitc.constant"() <{value = 0 : index}> : () -> index
     %2 = "emitc.constant"() <{value = 10 : index}> : () -> index
-    %3 = "emitc.constant"() <{value = 1 : index}> : () -> index
-    %4 = "emitc.constant"() <{value = 10 : index}> : () -> index
-    gpu.launch_func  @main_kernel::@main_kernel blocks in (%4, %3, %3) threads in (%3, %3, %3)  
+    %3 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
+    %alloc = memref.alloc() : memref<42xf32>
+    %4 = "emitc.constant"() <{value = 1 : index}> : () -> index
+    %5 = "emitc.constant"() <{value = 10 : index}> : () -> index
+    gpu.launch_func  @main_kernel::@main_kernel blocks in (%5, %4, %4) threads in (%4, %4, %4)  args(%alloc : memref<42xf32>)
+    memref.dealloc %alloc : memref<42xf32>
     return
   }
   gpu.module @main_kernel {
-    gpu.func @main_kernel() kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+    gpu.func @main_kernel(%arg0: memref<42xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
       %block_id_x = gpu.block_id  x
       %block_id_y = gpu.block_id  y
       %block_id_z = gpu.block_id  z
@@ -24,6 +27,8 @@ module attributes {gpu.container_module} {
       %block_dim_z = gpu.block_dim  z
       %0 = "emitc.constant"() <{value = 1 : index}> : () -> index
       %1 = "emitc.constant"() <{value = 0 : index}> : () -> index
+      %2 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
+      memref.store %2, %arg0[%block_id_x] : memref<42xf32>
       gpu.return
     }
   }

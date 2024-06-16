@@ -156,9 +156,16 @@ struct MetalEmitter {
   /// Emits a declaration of a variable with the given type and name.
   LogicalResult emitVariableDeclaration(Location loc, Type type,
                                         StringRef name);
+  /// Emits a declaration of a variable with the given type and name.
+  LogicalResult emitKnownTypeVariableDeclaration(Location loc, StringRef type,
+                                                 StringRef name,
+                                                 bool trailingSemicolon);
 
   /// Emits a variable declaration for a result of an operation.
   LogicalResult emitVariableAssignmentAndDeclaration(OpResult result);
+
+  LogicalResult emitKnownTypeVariableAssignmentAndDeclaration(OpResult result,
+                                                              StringRef type);
 
   /// Emits the variable declaration and assignment prefix for 'op'.
   /// - emits separate variable followed by std::tie for multi-valued operation;
@@ -194,6 +201,10 @@ struct MetalEmitter {
 
   LogicalResult emitLinearIndex(Location loc, int x, int y, int z,
                                 SmallVector<Value> indices);
+
+  LogicalResult emitLinearIndex(Location loc, StringRef x, StringRef y,
+                                StringRef z, StringRef xSize, StringRef ySize,
+                                StringRef zSize);
 
   LogicalResult emitLinearIndex(Location loc, StringRef xSize, StringRef ySize,
                                 StringRef zSize, SmallVector<Value> indices);
@@ -1139,8 +1150,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
-  emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x", "gridDim.y",
-                          "gridDim.z", storeOp.getIndices());
+  if (failed(emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x", "gridDim.y",
+                                     "gridDim.z", storeOp.getIndices())))
+    ;
   // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth,
   //                         storeOp.getIndices());
   os << "]";
@@ -1170,28 +1182,34 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   raw_indented_ostream &os = emitter.ostream();
 
   os << "[";
-  emitter.emitLinearIndex(loadOp.getLoc(), width, length, heigth,
-                          loadOp.getIndices());
+  if (failed(emitter.emitLinearIndex(loadOp.getLoc(), width, length, heigth,
+                                     loadOp.getIndices())))
+    return failure();
   os << "]";
   return success();
 }
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     metal::DeviceMakeDefaultOp op) {
-  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+
+  if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
+          op->getResult(0), "intptr_t")))
+    return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "_MetalDeviceMakeDefaultOp()";
+  os << "_MetalDeviceMakeDefault()";
   return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     metal::DeviceMakeCommandQueueOp op) {
-  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+  if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
+          op->getResult(0), "intptr_t")))
+    return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "_MetalDeviceMakeCommandQueueOp(";
+  os << "_MetalDeviceMakeCommandQueue(";
   os << emitter.getOrCreateName(op.getDevice());
   os << ")";
   return success();
@@ -1199,11 +1217,13 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     metal::CommandQueueMakeCommandBufferOp op) {
-  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+  if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
+          op->getResult(0), "intptr_t")))
+    return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "_MetalDeviceMakeCommandQueueOp(";
+  os << "_MetalCommandQueueMakeCommandBufferWithDefaultLibrary(";
   os << emitter.getOrCreateName(op.getCommandQueue());
   os << ", ";
   os << emitter.getOrCreateName(op.getDimX());
@@ -1211,21 +1231,31 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << emitter.getOrCreateName(op.getDimY());
   os << ", ";
   os << emitter.getOrCreateName(op.getDimZ());
-  os << ", ";
+  os << ", (int8_t *)\"";
   os << op.getFunctionName();
-  os << ")";
+  os << "\")";
   return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     metal::DeviceMakeBufferOp op) {
-  emitter.emitVariableAssignmentAndDeclaration(op->getResult(0));
+  if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
+          op->getResult(0), "intptr_t")))
+    return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
-  os << "_MetalDeviceMakeBufferOp(";
+  os << "_MetalDeviceMakeBuffer(";
   os << emitter.getOrCreateName(op.getDevice());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getIsStorageModeManaged());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getDimX()) << " * "
+     << emitter.getOrCreateName(op.getDimY()) << " * "
+     << emitter.getOrCreateName(op.getDimZ());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getSizeType());
   os << ")";
   return success();
 }
@@ -1247,7 +1277,7 @@ printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "_MetalCommandBufferWaitUntilCompletedOp(";
+  os << "_MetalCommandBufferWaitUntilCompleted(";
   os << emitter.getOrCreateName(op.getCommandBuffer());
   os << ")";
   return success();
@@ -1260,6 +1290,72 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   raw_indented_ostream &os = emitter.ostream();
   os << "_MetalRelease(";
   os << emitter.getOrCreateName(op.getRef());
+  os << ")";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::CommandBufferAddBufferOp op) {
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalCommandBufferAddBuffer(";
+  os << emitter.getOrCreateName(op.getCommandBuffer());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getBufferRef());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getIndex());
+  os << ")";
+
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter, metal::StoreOp op) {
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalStore_";
+  if (failed(emitter.emitType(op.getLoc(), op.getValue().getType())))
+    return failure();
+  os << "(";
+  os << emitter.getOrCreateName(op.getBuffer());
+  os << ", ";
+  if (failed(emitter.emitLinearIndex(op.getLoc(),
+                                     emitter.getOrCreateName(op.getIndexX()),
+                                     emitter.getOrCreateName(op.getIndexY()),
+                                     emitter.getOrCreateName(op.getIndexZ()),
+                                     emitter.getOrCreateName(op.getXSize()),
+                                     emitter.getOrCreateName(op.getYSize()),
+                                     emitter.getOrCreateName(op.getZSize()))))
+    return failure();
+  os << ", ";
+  os << emitter.getOrCreateName(op.getValue());
+
+  os << ")";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::GetElementOp op) {
+
+  if (failed(emitter.emitVariableAssignmentAndDeclaration(op->getResult(0))))
+    return failure();
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+  os << "_MetalLoad_";
+  if (failed(emitter.emitType(op.getLoc(), op.getResult().getType())))
+    return failure();
+  os << "(";
+  os << emitter.getOrCreateName(op.getBuffer());
+  os << ", ";
+  if (failed(emitter.emitLinearIndex(op.getLoc(),
+                                     emitter.getOrCreateName(op.getIndexX()),
+                                     emitter.getOrCreateName(op.getIndexY()),
+                                     emitter.getOrCreateName(op.getIndexZ()),
+                                     emitter.getOrCreateName(op.getXSize()),
+                                     emitter.getOrCreateName(op.getYSize()),
+                                     emitter.getOrCreateName(op.getZSize()))))
+    return failure();
   os << ")";
   return success();
 }
@@ -1281,25 +1377,29 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter,
-                                    gpu::LaunchFuncOp functionOp) {
+// static LogicalResult printOperation(MetalEmitter &emitter,
+//                                     gpu::LaunchFuncOp functionOp) {
 
-  MetalEmitter::Scope scope(emitter);
-  raw_indented_ostream &os = emitter.ostream();
-  emitter.emitType(functionOp.getLoc(), functionOp.getGridSizeX().getType());
-  os << "_MetalCommandBufferCommit(_"
-        "MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"
-     << functionOp.getKernelModuleName();
-  os << ",";
-  emitter.emitOperand(functionOp.getGridSizeX());
-  os << ",";
-  emitter.emitOperand(functionOp.getGridSizeY());
-  os << ",";
-  emitter.emitOperand(functionOp.getGridSizeZ());
-  os << "))";
+//   MetalEmitter::Scope scope(emitter);
+//   raw_indented_ostream &os = emitter.ostream();
+//   if(failed(emitter.emitType(functionOp.getLoc(),
+//   functionOp.getGridSizeX().getType()))) return failure(); os <<
+//   "_MetalCommandBufferCommit(_"
+//         "MetalCommandQueueMakeCommandBufferWithDefaultLibrary(queue,"
+//      << functionOp.getKernelModuleName();
+//   os << ",";
+//   if(failed(emitter.emitOperand(functionOp.getGridSizeX())))
+//   return failure();
+//   os << ",";
+//   if(failed(emitter.emitOperand(functionOp.getGridSizeY())))
+//   return failure();
+//   os << ",";
+//   if(failed(emitter.emitOperand(functionOp.getGridSizeZ())))
+//     return failure();
+//   os << "))";
 
-  return success();
-}
+//   return success();
+// }
 
 static LogicalResult printKernelSizeVariables(MetalEmitter &emitter) {
   MetalEmitter::Scope scope(emitter);
@@ -1759,6 +1859,18 @@ MetalEmitter::emitVariableAssignmentAndDeclaration(OpResult result) {
   return success();
 }
 
+LogicalResult
+MetalEmitter::emitKnownTypeVariableAssignmentAndDeclaration(OpResult result,
+                                                            StringRef type) {
+  if (failed(emitKnownTypeVariableDeclaration(result.getOwner()->getLoc(), type,
+                                              getOrCreateName(result), true)))
+    return failure();
+  if (failed(emitVariableAssignment(result)))
+    return failure();
+
+  return success();
+}
+
 LogicalResult MetalEmitter::emitGlobalVariable(GlobalOp op) {
   if (op.getExternSpecifier())
     os << "extern ";
@@ -1852,13 +1964,15 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
           // gpu ops.
           .Case<gpu::GPUModuleOp, gpu::GPUFuncOp, gpu::ModuleEndOp,
                 gpu::ThreadIdOp, gpu::BlockIdOp, gpu::GridDimOp,
-                gpu::BlockDimOp, gpu::ReturnOp, gpu::LaunchFuncOp>(
+                gpu::BlockDimOp, gpu::ReturnOp>(
               [&](auto op) { return printOperation(*this, op); })
           // metal ops.
           .Case<metal::DeviceMakeDefaultOp, metal::DeviceMakeBufferOp,
                 metal::DeviceMakeCommandQueueOp, metal::CommandBufferCommitOp,
                 metal::CommandQueueMakeCommandBufferOp,
-                metal::CommandBufferWaitUntilCompletedOp, metal::ReleaseOp>(
+                metal::CommandBufferWaitUntilCompletedOp, metal::ReleaseOp,
+                metal::StoreOp, metal::GetElementOp,
+                metal::CommandBufferAddBufferOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<memref::DeallocOp, memref::StoreOp, memref::LoadOp>(
               [&](auto op) { return printOperation(*this, op); })
@@ -1897,6 +2011,14 @@ LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
   if (failed(emitType(loc, type)))
     return failure();
   os << " " << name;
+  return success();
+}
+
+LogicalResult MetalEmitter::emitKnownTypeVariableDeclaration(
+    Location loc, StringRef type, StringRef name, bool trailingSemicolon) {
+  os << type << " " << name;
+  if (trailingSemicolon)
+    os << ";\n";
   return success();
 }
 
@@ -2051,6 +2173,15 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc, int xSize, int ySize,
   }
   // return (z * xSize * ySize) + (y * xSize) + x;
 
+  return (os << "(" << z << " * " << xSize << " * " << ySize << ") + (" << y
+             << " * " << xSize << ") + " << x,
+          success());
+}
+
+LogicalResult MetalEmitter::emitLinearIndex(Location loc, StringRef x,
+                                            StringRef y, StringRef z,
+                                            StringRef xSize, StringRef ySize,
+                                            StringRef zSize) {
   return (os << "(" << z << " * " << xSize << " * " << ySize << ") + (" << y
              << " * " << xSize << ") + " << x,
           success());
