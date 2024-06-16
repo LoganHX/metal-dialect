@@ -30,7 +30,7 @@ void main() {
   return;
 }
 
-  kernel void main_kernel(float* v1, uint3 id [[thread_position_in_grid]], uint3 gridDim [[threads_per_grid]]) {
+  kernel void main_kernel(device float* v1, uint3 id [[thread_position_in_grid]], uint3 gridDim [[threads_per_grid]]) {
     size_t v2;
     v2 = id.x;
     size_t v3;

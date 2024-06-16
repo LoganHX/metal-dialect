@@ -256,12 +256,6 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
         op.getLoc(), rewriter.getI1Type(),
         rewriter.getIntegerAttr(rewriter.getI1Type(), 0));
 
-    auto intValue = rewriter.create<emitc::ConstantOp>(
-        op.getLoc(), rewriter.getI64Type(),
-        rewriter.getIntegerAttr(rewriter.getI64Type(),
-                                64)); // TODO è una costante (e secondo me ha
-                                      // più senso fornire un tipo qua)
-
     auto rep = rewriter.create<mlir::metal::DeviceMakeBufferOp>(
         op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue,
         getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),

@@ -2023,8 +2023,9 @@ LogicalResult MetalEmitter::emitKnownTypeVariableDeclaration(
 }
 
 LogicalResult MetalEmitter::emitType(Location loc, Type type) {
-
   if (auto memrefType = dyn_cast<MemRefType>(type)) {
+      //Qua dentro dovrebbe entrarci solo lato kernel
+     os << "device ";
     if (failed(emitType(loc, memrefType.getElementType())))
       return failure();
     os << "*";
