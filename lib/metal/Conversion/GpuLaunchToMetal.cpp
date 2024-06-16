@@ -34,6 +34,96 @@ using namespace mlir;
 
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
+bool shouldMapToUnsigned(IntegerType::SignednessSemantics val) {
+  switch (val) {
+  case IntegerType::Signless:
+    return false;
+  case IntegerType::Signed:
+    return false;
+  case IntegerType::Unsigned:
+    return true;
+  }
+}
+StringRef getTypeString(Type type) {
+  // TODO di certo non è la cosa migliore avere questo calco di emitType
+  // dell'emitter di emitC qui, andrebbe estrapolato
+
+  // if (auto memrefType = dyn_cast<MemRefType>(type)) {
+  //   if (failed(emitType(loc, memrefType.getElementType())))
+  //     return failure();
+  //   os << "*";
+  //   return success();
+  // }
+
+  if (auto iType = dyn_cast<IntegerType>(type)) {
+    switch (iType.getWidth()) {
+    case 1:
+      return "bool";
+    case 8:
+    case 16:
+    case 32:
+    case 64:
+      if (shouldMapToUnsigned(iType.getSignedness()))
+        return "uint64_t";
+      else
+        return "int64_t";
+    default:
+      return "";
+    }
+  }
+  if (auto fType = dyn_cast<FloatType>(type)) {
+    switch (fType.getWidth()) {
+    case 32:
+      return "float";
+    case 64:
+      return "double";
+    default:
+      return "";
+    }
+  }
+  if (auto iType = dyn_cast<IndexType>(type))
+    return  "size_t";
+  // if (auto tType = dyn_cast<TensorType>(type)) {
+  //   if (!tType.hasRank())
+  //     return emitError(loc, "cannot emit unranked tensor type");
+  //   if (!tType.hasStaticShape())
+  //     return emitError(loc, "cannot emit tensor type with non static shape");
+  //   os << "Tensor<";
+  //   if (isa<ArrayType>(tType.getElementType()))
+  //     return emitError(loc, "cannot emit tensor of array type ") << type;
+  //   if (failed(emitType(loc, tType.getElementType())))
+  //     return failure();
+  //   auto shape = tType.getShape();
+  //   for (auto dimSize : shape) {
+  //     os << ", ";
+  //     os << dimSize;
+  //   }
+  //   os << ">";
+  //   return success();
+  // }
+  // if (auto tType = dyn_cast<TupleType>(type))
+  //   return emitTupleType(loc, tType.getTypes());
+  // if (auto oType = dyn_cast<emitc::OpaqueType>(type)) {
+  //   os << oType.getValue();
+  //   return success();
+  // }
+  // if (auto aType = dyn_cast<emitc::ArrayType>(type)) {
+  //   if (failed(emitType(loc, aType.getElementType())))
+  //     return failure();
+  //   for (auto dim : aType.getShape())
+  //     os << "[" << dim << "]";
+  //   return success();
+  // }
+  // if (auto pType = dyn_cast<emitc::PointerType>(type)) {
+  //   if (isa<ArrayType>(pType.getPointee()))
+  //     return emitError(loc, "cannot emit pointer to array type ") << type;
+  //   if (failed(emitType(loc, pType.getPointee())))
+  //     return failure();
+  //   os << "*";
+  //   return success();
+  // }
+  return "";
+}
 
 // TODO dovrei convertire returnOp in modo che creasse anche le metal::ReleaseOp
 // per il device e per la queue
@@ -160,13 +250,17 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
   LogicalResult
   matchAndRewrite(memref::AllocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
+
+    // isStorageModeManaged
     auto boolValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getI1Type(),
-        rewriter.getIntegerAttr(rewriter.getI1Type(), 1));
-    
+        rewriter.getIntegerAttr(rewriter.getI1Type(), 0));
+
     auto intValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getI64Type(),
-        rewriter.getIntegerAttr(rewriter.getI64Type(), 64)); //TODO è una costante (e secondo me ha più senso fornire un tipo qua)
+        rewriter.getIntegerAttr(rewriter.getI64Type(),
+                                64)); // TODO è una costante (e secondo me ha
+                                      // più senso fornire un tipo qua)
 
     auto rep = rewriter.create<mlir::metal::DeviceMakeBufferOp>(
         op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue,
@@ -176,7 +270,7 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
                      rewriter.getI64Type(), 1),
         getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),
                      rewriter.getI64Type(), 2),
-        intValue);
+        getTypeString(op.getMemref().getType().getElementType()));
 
     rewriter.replaceOp(op, rep);
 

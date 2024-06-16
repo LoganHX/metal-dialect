@@ -3,7 +3,7 @@ void main() {
   size_t v2 = 0;
   size_t v3 = 10;
   float v4 = 1.021000000e+01f;
-  bool v5 = true;
+  bool v5 = false;
   int64_t v6 = 64;
   intptr_t v7;
   v7 = _MetalDeviceMakeDefault();
@@ -11,7 +11,7 @@ void main() {
   int64_t v9 = 1;
   int64_t v10 = 1;
   intptr_t v11;
-  v11 = _MetalDeviceMakeBuffer(v7, v5, v8 * v9 * v10, v6);
+  v11 = _MetalDeviceMakeBuffer(v7, v5, v8 * v9 * v10, sizeof(float));
   size_t v12 = 1;
   size_t v13 = 10;
   int64_t v14 = (int64_t) v13;

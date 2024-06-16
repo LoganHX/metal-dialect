@@ -496,15 +496,15 @@ void DeviceMakeCommandQueueOp::build(OpBuilder &builder, OperationState &result,
 
 void DeviceMakeBufferOp::build(OpBuilder &builder, OperationState &result,
                                Value device, Value isStorageModeManaged,
-                               Value dimX, Value dimY, Value dimZ, Value sizeType) {
+                               Value dimX, Value dimY, Value dimZ, StringRef stringType) {
   result.addOperands(device);
   result.addOperands(isStorageModeManaged);
   result.addOperands(dimX);
   result.addOperands(dimY);
   result.addOperands(dimZ);
 
-  result.addOperands(sizeType);
-  result.addTypes(builder.getIndexType());
+result.addAttribute("stringType", builder.getStringAttr(stringType));  
+result.addTypes(builder.getIndexType());
 };
 
 //===----------------------------------------------------------------------===//

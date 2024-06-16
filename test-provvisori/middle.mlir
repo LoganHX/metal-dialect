@@ -4,13 +4,13 @@ module attributes {gpu.container_module} {
     %1 = "emitc.constant"() <{value = 0 : index}> : () -> index
     %2 = "emitc.constant"() <{value = 10 : index}> : () -> index
     %3 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
-    %4 = "emitc.constant"() <{value = true}> : () -> i1
+    %4 = "emitc.constant"() <{value = false}> : () -> i1
     %5 = "emitc.constant"() <{value = 64 : i64}> : () -> i64
     %6 = metal.device_make_default : index
     %7 = "emitc.constant"() <{value = 42 : i64}> : () -> i64
     %8 = "emitc.constant"() <{value = 1 : i64}> : () -> i64
     %9 = "emitc.constant"() <{value = 1 : i64}> : () -> i64
-    %10 = metal.device_make_buffer %6, %4, %7, %8, %9, %5 : (index, i1, i64, i64, i64, i64) -> index
+    %10 = metal.device_make_buffer %6, %4, %7, %8, %9, "float" : (index, i1, i64, i64, i64) -> index
     %11 = "emitc.constant"() <{value = 1 : index}> : () -> index
     %12 = "emitc.constant"() <{value = 10 : index}> : () -> index
     %13 = emitc.cast %12 : index to i64

@@ -365,16 +365,16 @@ def DeviceMakeBufferOp : Metal_Op<"device_make_buffer"> {
   let summary = "Device make buffer operation";
 
   let arguments = (ins Index:$device, I1:$isStorageModeManaged,
-                       I64:$dimX, I64:$dimY, I64:$dimZ, I64:$sizeType);
+                       I64:$dimX, I64:$dimY, I64:$dimZ, StrAttr:$stringType);
 
   let results = (outs Index:$bufferOp);
 
   let builders = [
     OpBuilder<(ins "Value":$device, "Value":$isStorageModeManaged, "Value":$dimX, "Value":$dimY, "Value":$dimZ,
-                      "Value":$sizeType)>
+                      "StringRef":$stringType)>
   ];
 
-  let assemblyFormat = "$device `,`$isStorageModeManaged `,` $dimX `,` $dimY `,` $dimZ `,`$sizeType "
+  let assemblyFormat = "$device `,`$isStorageModeManaged `,` $dimX `,` $dimY `,` $dimZ `,`$stringType "
                        "attr-dict `:` functional-type(operands, results)";
 }
 

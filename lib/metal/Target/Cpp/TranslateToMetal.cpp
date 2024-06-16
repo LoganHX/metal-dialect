@@ -1255,7 +1255,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
      << emitter.getOrCreateName(op.getDimY()) << " * "
      << emitter.getOrCreateName(op.getDimZ());
   os << ", ";
-  os << emitter.getOrCreateName(op.getSizeType());
+  os << "sizeof(" << op.getStringType() << ")";
   os << ")";
   return success();
 }
