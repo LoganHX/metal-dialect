@@ -60,7 +60,15 @@ StringRef getTypeString(Type type) {
     case 1:
       return "bool";
     case 8:
+      if (shouldMapToUnsigned(iType.getSignedness()))
+        return "uint8_t";
+      else
+        return "int8_t";
     case 16:
+      if (shouldMapToUnsigned(iType.getSignedness()))
+        return "uint16_t";
+      else
+        return "int16_t";
     case 32:
     if (shouldMapToUnsigned(iType.getSignedness()))
         return "uint32_t";
