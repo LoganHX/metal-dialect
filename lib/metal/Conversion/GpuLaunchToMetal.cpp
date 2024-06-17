@@ -62,6 +62,10 @@ StringRef getTypeString(Type type) {
     case 8:
     case 16:
     case 32:
+    if (shouldMapToUnsigned(iType.getSignedness()))
+        return "uint32_t";
+      else
+        return "int32_t";
     case 64:
       if (shouldMapToUnsigned(iType.getSignedness()))
         return "uint64_t";
@@ -83,6 +87,7 @@ StringRef getTypeString(Type type) {
   }
   if (auto iType = dyn_cast<IndexType>(type))
     return "size_t";
+  /*
   // if (auto tType = dyn_cast<TensorType>(type)) {
   //   if (!tType.hasRank())
   //     return emitError(loc, "cannot emit unranked tensor type");
@@ -122,6 +127,7 @@ StringRef getTypeString(Type type) {
   //   os << "*";
   //   return success();
   // }
+  */
   return "";
 }
 

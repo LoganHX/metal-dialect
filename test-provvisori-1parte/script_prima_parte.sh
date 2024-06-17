@@ -3,10 +3,10 @@
 #Scriptino
 set -x
 
-start="test-provvisori/starting_point.mlir"
-input="test-provvisori/after_official.mlir"
-middle="test-provvisori/middle.mlir"
-output="test-provvisori/out.mlir"
+start="test-provvisori-1parte/starting_point.mlir"
+input="test-provvisori-1parte/after_official.mlir"
+middle="test-provvisori-1parte/middle.mlir"
+output="test-provvisori-1parte/out.mlir"
 
 mlir_opt=llvm-project/build/release/bin/mlir-opt
 metal_opt=/build/debug/bin/metal-opt
