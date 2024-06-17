@@ -186,8 +186,8 @@ struct ConvertDeallocOp : public OpConversionPattern<memref::DeallocOp> {
   LogicalResult
   matchAndRewrite(memref::DeallocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), adaptor.getMemref());
-    rewriter.eraseOp(op);
+    auto rep = rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), adaptor.getMemref());
+    rewriter.replaceOp(op, rep);
     return success();
   }
 };
@@ -202,7 +202,7 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
   matchAndRewrite(memref::LoadOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    rewriter.create<mlir::metal::GetElementOp>(
+    auto rep = rewriter.create<mlir::metal::GetElementOp>(
         op.getLoc(), op.getMemref().getType().getElementType(),
         adaptor.getMemref(),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
@@ -215,7 +215,7 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
         getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
                      rewriter.getIntegerType(32, false), 2));
 
-    rewriter.eraseOp(op);
+    rewriter.replaceOp(op, rep);
     return success();
   }
 };
@@ -230,7 +230,7 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   matchAndRewrite(memref::StoreOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    rewriter.create<mlir::metal::StoreOp>(
+    auto rep = rewriter.create<mlir::metal::StoreOp>(
         op.getLoc(), adaptor.getValue(), adaptor.getMemref(),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
         getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
@@ -242,7 +242,7 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
         getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
                      rewriter.getIntegerType(32, false), 2));
 
-    rewriter.eraseOp(op);
+    rewriter.replaceOp(op, rep);
     return success();
   }
 };
