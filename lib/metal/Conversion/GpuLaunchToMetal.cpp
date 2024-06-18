@@ -70,7 +70,7 @@ StringRef getTypeString(Type type) {
       else
         return "int16_t";
     case 32:
-    if (shouldMapToUnsigned(iType.getSignedness()))
+      if (shouldMapToUnsigned(iType.getSignedness()))
         return "uint32_t";
       else
         return "int32_t";
@@ -194,7 +194,8 @@ struct ConvertDeallocOp : public OpConversionPattern<memref::DeallocOp> {
   LogicalResult
   matchAndRewrite(memref::DeallocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    auto rep = rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), adaptor.getMemref());
+    auto rep = rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(),
+                                                       adaptor.getMemref());
     rewriter.replaceOp(op, rep);
     return success();
   }
@@ -346,11 +347,42 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
   }
 };
 
+struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
+  ConvertMatmulOp(mlir::MLIRContext *context)
+      : OpConversionPattern<linalg::MatmulOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(linalg::MatmulOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    auto intValue = rewriter.create<emitc::ConstantOp>(
+        op.getLoc(), rewriter.getIntegerType(32, false),
+        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
+
+    auto rep = rewriter.create<mlir::metal::MatmulOp>(
+        op.getLoc(), 
+        getQueue(rewriter, op.getLoc()), 
+        adaptor.getOperands()[0],
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[1],
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[2],
+        intValue);
+    rewriter.replaceOp(op, rep);
+    // rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
 } // end namespace
 
 void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
     RewritePatternSet &patterns, MLIRContext *ctx) {
 
   patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
-                  ConvertDeallocOp, ConvertLoadOp>(ctx);
+                  ConvertDeallocOp, ConvertLoadOp, ConvertMatmulOp>(ctx);
 }

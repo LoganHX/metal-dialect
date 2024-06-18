@@ -13,10 +13,10 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/EnumAttr.td"
 include "mlir/IR/BuiltinAttributeInterfaces.td"
 
-def Metal_Type : AnyTypeOf<[I1, UI8, UI16, UI32, UI64, SI8, SI16, SI32, SI64,
+def Metal_Type : AnyTypeOf<[I1, UI8, UI16, UI32, UI64, SI8, SI16, I32, SI32, SI64,
                             F16, F32]>;
 
-def Int_Type : AnyTypeOf<[I1, UI8, UI16, UI32, UI64, SI8, SI16, SI32, SI64, Index]>; 
+def Int_Type : AnyTypeOf<[I1, I32, I64, UI8, UI16, UI32, UI64, SI8, SI16, SI32, SI64, Index]>; 
 //===----------------------------------------------------------------------===//
 // ModuleOp
 //===----------------------------------------------------------------------===//
@@ -118,6 +118,25 @@ def ReturnOp : Metal_Op<"return", [Pure, Terminator]> {
 
 //   let assemblyFormat = "attr-dict `:` type(results)";
 // }
+
+//===----------------------------------------------------------------------===//
+// MatmulOp
+//===----------------------------------------------------------------------===//
+
+def MatmulOp : Metal_Op<"matmul"> {
+  let summary = "Matrix multiplication operation";
+
+  let arguments = (ins Int_Type:$queue, Int_Type:$bufferA, Int_Type:$rowsA, Int_Type:$columnsA, 
+                                        Int_Type:$bufferB, Int_Type:$rowsB, Int_Type:$columnsB,
+                                        Int_Type:$bufferC,
+                                        Int_Type:$elementSize);
+
+  let hasVerifier = 0; //TODO scrivere i verifiers
+
+  let assemblyFormat = "$queue `,` $bufferA `<` $rowsA `:`$columnsA `>` $bufferB `<` $rowsB `:`$columnsB `>` $bufferC `,` $elementSize attr-dict `:` type(operands)";
+ //let assemblyFormat = "$queue `,` $bufferA `,`  $bufferB `,` $bufferC `,` $elementSize attr-dict `:` type(operands)";
+
+}
 
 //===----------------------------------------------------------------------===//
 // StoreOp

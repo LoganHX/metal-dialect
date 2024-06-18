@@ -5,6 +5,8 @@
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
+
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
@@ -41,6 +43,8 @@ struct ConvertGpuLaunchToMetal
     target.addLegalDialect<gpu::GPUDialect>();
 
     target.addIllegalDialect<memref::MemRefDialect>();
+    target.addIllegalDialect<linalg::LinalgDialect>();
+
     target.addIllegalOp<gpu::LaunchFuncOp>();
 
     target.addDynamicallyLegalOp<memref::LoadOp>(

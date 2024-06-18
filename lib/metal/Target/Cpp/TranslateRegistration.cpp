@@ -12,6 +12,7 @@
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "metal/IR/MetalDialect.h"
 #include "metal/IR/MetalOps.h"
 
@@ -51,6 +52,7 @@ void registerToMetalTranslation() {
         // clang-format off
         registry.insert<cf::ControlFlowDialect,
                         gpu::GPUDialect,
+                        linalg::LinalgDialect,
                         metal::MetalDialect,
                         memref::MemRefDialect,
                         emitc::EmitCDialect,

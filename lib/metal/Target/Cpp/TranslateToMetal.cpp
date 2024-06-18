@@ -1188,6 +1188,16 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << "]";
   return success();
 }
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    metal::MatmulOp op) {
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+ 
+  return success();
+}
+
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     metal::DeviceMakeDefaultOp op) {
 
@@ -1972,7 +1982,7 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
                 metal::CommandQueueMakeCommandBufferOp,
                 metal::CommandBufferWaitUntilCompletedOp, metal::ReleaseOp,
                 metal::StoreOp, metal::GetElementOp,
-                metal::CommandBufferAddBufferOp>(
+                metal::CommandBufferAddBufferOp, metal::MatmulOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<memref::DeallocOp, memref::StoreOp, memref::LoadOp>(
               [&](auto op) { return printOperation(*this, op); })
