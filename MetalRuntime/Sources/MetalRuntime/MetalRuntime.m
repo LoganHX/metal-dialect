@@ -162,24 +162,29 @@ void _MetalCommandBufferWaitUntilCompleted(intptr_t ref) {
 // MatrixMultiplication
 
 
-intptr_t _MetalMatMul(intptr_t ref, void* matA, int rowsA, int columnsA,
-                      void* matB, int rowsB, int columnsB,
-                      void* matC, int elSize) {
-  intptr_t value = 0;
+intptr_t _MetalMatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
+                      intptr_t matB, int rowsB, int columnsB,
+                      intptr_t matC, int elSize) {
+    void* tmpA = _MetalBufferGetContents2(matA);
+    void* tmpB = _MetalBufferGetContents2(matB);
+    void* tmpC = _MetalBufferGetContents2(matC);
+    
+    intptr_t value = 0;
     @autoreleasepool {
         CommandQueue *instance = [CommandQueue unwrap:ref];
-        value = [[instance matMulWithMatA:matA rowsA:rowsA columnsA:columnsA matB:matB rowsB:rowsB columnsB:columnsB matC:matC  elementSize:elSize] wrap];
+        value = [[instance matMulWithMatA:tmpA rowsA:rowsA columnsA:columnsA matB:tmpB rowsB:rowsB columnsB:columnsB matC:tmpC  elementSize:elSize] wrap];
     }
   return value;
 }
 
-intptr_t _MetalPrintMat(intptr_t ref, void* mat, int rows, int columns, int elSize) {
-  intptr_t value = 0;
-    @autoreleasepool {
+void _MetalPrintMat(intptr_t ref, intptr_t mat, int rows, int columns, int elSize) {
+    void* tmp = _MetalBufferGetContents2(mat);
+
+        @autoreleasepool {
         CommandQueue *instance = [CommandQueue unwrap:ref];
-        [instance printMatWithMat:mat rows:rows columns:columns elementSize:elSize];
+        [instance printMatWithMat:tmp rows:rows columns:columns elementSize:elSize];
     }
-  return value;
+  return;
 }
 
 // _____________________________________________________________________________
