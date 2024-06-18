@@ -24,13 +24,20 @@ public class Device: Wrappable {
     return CommandQueue(device: device, commandQueue: commandQueue)
   }
   
-  @objc
-  public func makeBuffer(isStorageModeManaged: Bool, bufferSize: Int, count: Int) -> Buffer? {
-    let option: MTLResourceOptions = isStorageModeManaged
-      ? .storageModeManaged : .storageModeShared
-    if let buffer = device.makeBuffer(length: bufferSize, options: option) {
-      return Buffer(buffer: buffer, count: count)
+  
+    @objc public func makeBuffer(isStorageModeManaged: Bool, bufferSize: Int, count: Int) -> Buffer? {
+      let option: MTLResourceOptions = isStorageModeManaged
+        ? .storageModeManaged
+        : .storageModeShared
+        var alignm: Int
+        
+        alignm = calculateAlignmentSize(size: bufferSize)
+        
+      if let buffer = device.makeBuffer(length: alignm, options: option) {
+        return Buffer(buffer: buffer, count: count)
+      }
+      return nil
     }
-    return nil
-  }
+
+    
 }

@@ -1,4 +1,6 @@
 import Metal
+import MetalPerformanceShaders
+
 
 @objc
 public class CommandQueue: Wrappable {
@@ -43,5 +45,75 @@ public class CommandQueue: Wrappable {
       return nil
     }
   }
+    
+    @objc
+    public func matMul(matA:UnsafeMutableRawPointer, rowsA: Int, columnsA: Int,
+                       matB:UnsafeMutableRawPointer, rowsB: Int, columnsB: Int,
+                       matC:UnsafeMutableRawPointer, elementSize: Int) -> CommandBuffer? {
+
+        let bufferA = device.makeBuffer(bytes: matA,
+                                       length: calculateAlignmentSize(size: rowsA*columnsA*elementSize),//TODO
+                                       options: .storageModeShared)
+        let bufferB = device.makeBuffer(bytes: matB,
+                                        length: calculateAlignmentSize(size: rowsB*columnsB*elementSize),
+                                       options: .storageModeShared)
+        let bufferC = device.makeBuffer(bytesNoCopy: matC,
+                                        length: calculateAlignmentSize(size: rowsA*columnsB*elementSize),
+                                        options: .storageModeShared)
+        
+        let descriptorA = MPSMatrixDescriptor(rows: rowsA, columns: columnsA, rowBytes: columnsA*elementSize, dataType: MPSDataType.float32)
+        let descriptorB = MPSMatrixDescriptor(rows: rowsB, columns: columnsB, rowBytes: columnsB*elementSize, dataType: MPSDataType.float32)
+        let descriptorC = MPSMatrixDescriptor(rows: rowsA, columns: columnsB, rowBytes: columnsB*elementSize, dataType: MPSDataType.float32)
+        
+        let matrixA = MPSMatrix(buffer: bufferA!, descriptor: descriptorA)
+        let matrixB = MPSMatrix(buffer: bufferB!, descriptor: descriptorB)
+        let matrixC = MPSMatrix(buffer: bufferC!, descriptor: descriptorC)
+        
+
+        let matrixMultiplication = MPSMatrixMultiplication(device: device, transposeLeft: false, transposeRight: false,
+                                                               resultRows: rowsA, resultColumns: columnsB, interiorColumns: columnsA, alpha: 1.0, beta: 0.0)
+        
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else { return nil }
+            
+        matrixMultiplication.encode(commandBuffer: commandBuffer, leftMatrix: matrixA, rightMatrix: matrixB, resultMatrix: matrixC)
+      
+        return CommandBuffer(device: device, commandBuffer: commandBuffer)
+           
+    }
+    @objc
+    public func printMat(mat:UnsafeMutableRawPointer, rows: Int, columns: Int, elementSize: Int) {
+
+        let bufferA = device.makeBuffer(bytes: mat,
+                                       length: rows*columns*elementSize,
+                                       options: .storageModeShared)
+       
+        
+        let descriptorA = MPSMatrixDescriptor(rows: rows, columns: columns, rowBytes: columns*elementSize, dataType: MPSDataType.float32)
+       
+        let matrixA = MPSMatrix(buffer: bufferA!, descriptor: descriptorA)
+
+        let buffer = matrixA.data
+        let rowCount = matrixA.rows
+        let columnCount = matrixA.columns
+        let elementSize = MemoryLayout<Float>.size
+        
+        // Otteniamo un puntatore ai dati nel buffer
+        let pointer = buffer.contents()
+        
+        // Iteriamo attraverso ogni riga e colonna della matrice
+        for row in 0..<rowCount {
+            for col in 0..<columnCount {
+                // Calcoliamo l'indice nel buffer per l'elemento corrente
+                let index = row * columnCount + col
+                // Leggiamo il valore float dal buffer
+                let value = pointer.load(fromByteOffset: index * elementSize, as: Float.self)
+                // Stampiamo il valore
+                print("\(value)", terminator: "\t")
+            }
+            print("") // Vai a capo dopo ogni riga
+        }
+        
+        return;
+    }
   
 }

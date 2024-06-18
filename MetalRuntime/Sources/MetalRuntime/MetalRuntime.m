@@ -2,6 +2,7 @@
 @import Foundation;
 @import MetalRuntimeSwift;
 
+
 // _____________________________________________________________________________
 // Release
 
@@ -34,12 +35,12 @@ intptr_t _MetalDeviceMakeCommandQueue(intptr_t ref) {
 intptr_t _MetalDeviceMakeBuffer(intptr_t ref,
                                 bool isStorageModeManaged,
                                 int64_t count,
-                                int64_t sizeType) {
+                                int64_t typeSize) {
   intptr_t value = 0;
   @autoreleasepool {
     Device *instance = [Device unwrap:ref];
     value = [[instance makeBufferWithIsStorageModeManaged:isStorageModeManaged
-                                               bufferSize:count * sizeType
+                                               bufferSize:count * typeSize
                                                     count:count] wrap];
   }
   return value;
@@ -80,6 +81,17 @@ void* _MetalBufferGetContents2(intptr_t ref) {
   return value;
 }
 
+void _MetalStore_float(intptr_t ref, int64_t index, float value){
+    float *arr = (float *) _MetalBufferGetContents2(ref);
+    arr[index] = value;
+    return;
+}
+
+float _MetalLoad_float(intptr_t ref, int64_t index){
+    float *arr = (float *) _MetalBufferGetContents2(ref);
+    return arr[index];
+}
+
 // _____________________________________________________________________________
 // CommandQueue
 
@@ -103,6 +115,20 @@ intptr_t _MetalCommandQueueMakeCommandBuffer(intptr_t ref,
                                               depth:depth] wrap];
   }
   return value;
+}
+
+intptr_t _MetalCommandQueueMakeCommandBufferWithDefaultLibrary(intptr_t ref,
+                                                               int64_t width,
+                                                               int64_t height,
+                                                               int64_t depth,
+                                             const int8_t *functionName
+                                             ) {
+ 
+  
+  return _MetalCommandQueueMakeCommandBuffer(ref, 
+                                             (int8_t*)"/Users/c.stabile12/Downloads/default.metallib",
+                                             functionName,
+                                             width, height, depth);
 }
 
 // _____________________________________________________________________________
@@ -131,3 +157,29 @@ void _MetalCommandBufferWaitUntilCompleted(intptr_t ref) {
     [instance waitUntilCompleted];
   }
 }
+
+// _____________________________________________________________________________
+// MatrixMultiplication
+
+
+intptr_t _MetalMatMul(intptr_t ref, void* matA, int rowsA, int columnsA,
+                      void* matB, int rowsB, int columnsB,
+                      void* matC, int elSize) {
+  intptr_t value = 0;
+    @autoreleasepool {
+        CommandQueue *instance = [CommandQueue unwrap:ref];
+        value = [[instance matMulWithMatA:matA rowsA:rowsA columnsA:columnsA matB:matB rowsB:rowsB columnsB:columnsB matC:matC  elementSize:elSize] wrap];
+    }
+  return value;
+}
+
+intptr_t _MetalPrintMat(intptr_t ref, void* mat, int rows, int columns, int elSize) {
+  intptr_t value = 0;
+    @autoreleasepool {
+        CommandQueue *instance = [CommandQueue unwrap:ref];
+        [instance printMatWithMat:mat rows:rows columns:columns elementSize:elSize];
+    }
+  return value;
+}
+
+// _____________________________________________________________________________

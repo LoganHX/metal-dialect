@@ -4,10 +4,10 @@ import Metal
 public class CommandBuffer: Wrappable {
   private let device: MTLDevice
   private let commandBuffer: MTLCommandBuffer
-  private var computeEncoder: MTLComputeCommandEncoder
-  private var buffers: [MTLBuffer]
-  private let gridSize: MTLSize
-  private let threads: MTLSize
+  private var computeEncoder: MTLComputeCommandEncoder?
+  private var buffers: [MTLBuffer]?
+  private let gridSize: MTLSize?
+  private let threads: MTLSize?
   
   init(device: MTLDevice,
        commandBuffer: MTLCommandBuffer,
@@ -21,24 +21,39 @@ public class CommandBuffer: Wrappable {
     self.gridSize = gridSize
     self.threads = threads
   }
-  
+    init(device: MTLDevice,
+         commandBuffer: MTLCommandBuffer) {
+      self.buffers = []
+      self.device = device
+      self.commandBuffer = commandBuffer
+      self.computeEncoder = nil
+      self.gridSize = nil
+      self.threads = nil
+    }
+   
   @objc
   public func addBuffer(buffer: Buffer, index: Int) {
-    self.buffers.append(buffer.buffer)
-    self.computeEncoder.setBuffer(buffer.buffer, offset: 0, index: index)
+    self.buffers?.append(buffer.buffer)
+    self.computeEncoder?.setBuffer(buffer.buffer, offset: 0, index: index)
   }
   
   @objc
   public func commit() {
-    self.computeEncoder.dispatchThreads(gridSize,
-                                        threadsPerThreadgroup: threads)
-    self.computeEncoder.endEncoding()
+      if(nil == gridSize && nil == computeEncoder && nil == threads && buffers?.isEmpty == true){
+          // MPSMatrixMultiplication
+          //return simpleCommit();
+          self.commandBuffer.commit();
+          return
+      }
+      self.computeEncoder?.dispatchThreads(gridSize!,
+                                        threadsPerThreadgroup: threads!)
+    self.computeEncoder?.endEncoding()
     
     
-    let isStorageModeManaged = self.buffers.first { $0.storageMode == .managed } != nil
+    let isStorageModeManaged = self.buffers?.first { $0.storageMode == .managed } != nil
     if isStorageModeManaged {
       let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
-      for buffer in buffers {
+      for buffer in buffers! {
         buffer.didModifyRange(0..<buffer.length)
         blitCommandEncoder.synchronize(resource: buffer)
       }
@@ -47,7 +62,7 @@ public class CommandBuffer: Wrappable {
     
     self.commandBuffer.commit();
   }
-  
+
   @objc
   public func waitUntilCompleted() {
     self.commandBuffer.waitUntilCompleted()
