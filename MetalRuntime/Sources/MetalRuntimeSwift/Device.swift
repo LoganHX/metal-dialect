@@ -30,8 +30,9 @@ public class Device: Wrappable {
         ? .storageModeManaged
         : .storageModeShared
         var alignm: Int
-        
-        alignm = calculateAlignmentSize(size: bufferSize)
+        alignm = calculateAlignmentSize(size: bufferSize*count)
+        print(alignm);
+
         
       if let buffer = device.makeBuffer(length: alignm, options: option) {
         return Buffer(buffer: buffer, count: count)

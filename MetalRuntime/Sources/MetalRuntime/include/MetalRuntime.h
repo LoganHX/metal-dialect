@@ -34,6 +34,10 @@ void _MetalStore_float(intptr_t ref, int64_t index, float value);
 
 float _MetalLoad_float(intptr_t ref, int64_t index);
 
+void _MetalStore_int32_t(intptr_t ref, int64_t index, int32_t value);
+
+int32_t _MetalLoad_int32_t(intptr_t ref, int64_t index);
+
 // _____________________________________________________________________________
 // CommandQueue
 
@@ -65,7 +69,20 @@ void _MetalCommandBufferWaitUntilCompleted(intptr_t ref);
 
 void _MetalPrintMat(intptr_t ref, intptr_t mat, int rows, int columns, int elSize);
 
+//TODO credo c'entri l'indexing che ho usato
+//riguardo il fatto che devo invertire i booleani di //dx e sx
+
 intptr_t _MetalMatMul(intptr_t ref, 
+                      intptr_t matA, int rowsA, int columnsA,
+                      intptr_t matB, int rowsB, int columnsB,
+                      intptr_t matC,
+                      int elSize);
+intptr_t _MetalMatMul_TransposeLeft(intptr_t ref,
+                      intptr_t matA, int rowsA, int columnsA,
+                      intptr_t matB, int rowsB, int columnsB,
+                      intptr_t matC,
+                      int elSize);
+intptr_t _MetalMatMul_TransposeRight(intptr_t ref,
                       intptr_t matA, int rowsA, int columnsA,
                       intptr_t matB, int rowsB, int columnsB,
                       intptr_t matC,

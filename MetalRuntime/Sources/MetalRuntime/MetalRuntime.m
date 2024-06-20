@@ -92,6 +92,17 @@ float _MetalLoad_float(intptr_t ref, int64_t index){
     return arr[index];
 }
 
+void _MetalStore_int32_t(intptr_t ref, int64_t index, int32_t value){
+    int32_t *arr = (int32_t *) _MetalBufferGetContents2(ref);
+    arr[index] = value;
+    return;
+}
+
+int32_t _MetalLoad_int32_t(intptr_t ref, int64_t index){
+    int32_t *arr = (int32_t *) _MetalBufferGetContents2(ref);
+    return arr[index];
+}
+
 // _____________________________________________________________________________
 // CommandQueue
 
@@ -161,10 +172,9 @@ void _MetalCommandBufferWaitUntilCompleted(intptr_t ref) {
 // _____________________________________________________________________________
 // MatrixMultiplication
 
-
-intptr_t _MetalMatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
-                      intptr_t matB, int rowsB, int columnsB,
-                      intptr_t matC, int elSize) {
+intptr_t _Generic_MatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
+                        intptr_t matB, int rowsB, int columnsB,
+                        intptr_t matC, int elSize, bool transposeA, bool transposeB){
     void* tmpA = _MetalBufferGetContents2(matA);
     void* tmpB = _MetalBufferGetContents2(matB);
     void* tmpC = _MetalBufferGetContents2(matC);
@@ -172,10 +182,41 @@ intptr_t _MetalMatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
     intptr_t value = 0;
     @autoreleasepool {
         CommandQueue *instance = [CommandQueue unwrap:ref];
-        value = [[instance matMulWithMatA:tmpA rowsA:rowsA columnsA:columnsA matB:tmpB rowsB:rowsB columnsB:columnsB matC:tmpC  elementSize:elSize] wrap];
+        value = [[instance matMulWithMatA:tmpA rowsA:rowsA columnsA:columnsA
+                                     matB:tmpB rowsB:rowsB columnsB:columnsB
+                                     matC:tmpC
+                                     elementSize:elSize
+                                     typeName:@"float"
+                                     transposeA:transposeA transposeB:transposeB] wrap];
     }
   return value;
+    
 }
+
+intptr_t _MetalMatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
+                      intptr_t matB, int rowsB, int columnsB,
+                      intptr_t matC, int elSize) {
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, false, false);
+    
+}
+
+//credo c'entri l'indexing che ho usato
+//riguardo il fatto che devo invertire i booleani di //dx e sx
+
+intptr_t _MetalMatMul_TransposeLeft(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
+                      intptr_t matB, int rowsB, int columnsB,
+                      intptr_t matC, int elSize) {
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, false, true); //TODO
+    
+}
+
+intptr_t _MetalMatMul_TransposeRight(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
+                      intptr_t matB, int rowsB, int columnsB,
+                      intptr_t matC, int elSize) {
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, true, false); //TODO
+    
+}
+
 
 void _MetalPrintMat(intptr_t ref, intptr_t mat, int rows, int columns, int elSize) {
     void* tmp = _MetalBufferGetContents2(mat);
