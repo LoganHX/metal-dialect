@@ -5,25 +5,24 @@ module attributes {gpu.container_module} {
     %2 = "emitc.constant"() <{value = 10 : index}> : () -> index
     %3 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
     %4 = "emitc.constant"() <{value = false}> : () -> i1
-    %5 = "emitc.constant"() <{value = 64 : i64}> : () -> i64
-    %6 = metal.device_make_default : index
-    %7 = "emitc.constant"() <{value = 42 : i64}> : () -> i64
+    %5 = metal.device_make_default : index
+    %6 = "emitc.constant"() <{value = 42 : i64}> : () -> i64
+    %7 = "emitc.constant"() <{value = 1 : i64}> : () -> i64
     %8 = "emitc.constant"() <{value = 1 : i64}> : () -> i64
-    %9 = "emitc.constant"() <{value = 1 : i64}> : () -> i64
-    %10 = metal.device_make_buffer %6, %4, %7, %8, %9, "float" : (index, i1, i64, i64, i64) -> index
-    %11 = "emitc.constant"() <{value = 1 : index}> : () -> index
-    %12 = "emitc.constant"() <{value = 10 : index}> : () -> index
-    %13 = emitc.cast %12 : index to i64
-    %14 = emitc.cast %11 : index to i64
-    %15 = emitc.cast %11 : index to i64
-    %16 = metal.device_make_command_queue %6 : (index) -> index
-    %17 = metal.command_queue_make_command_buffer main_kernel %16, %13, %14, %15: (index, i64, i64, i64) -> index
-    %18 = "emitc.constant"() <{value = 0 : i64}> : () -> i64
-    metal.command_buffer_add_buffer %17, %10, %18 : (index, index, i64) -> ()
-    metal.command_buffer_commit %17 : index
-    metal.command_buffer_wait_until_completed %17 : index
-    metal.release %17 : index
-    metal.release %10 : index
+    %9 = metal.device_make_buffer %5, %4, %6, %7, %8, "float" : (index, i1, i64, i64, i64) -> index
+    %10 = "emitc.constant"() <{value = 1 : index}> : () -> index
+    %11 = "emitc.constant"() <{value = 10 : index}> : () -> index
+    %12 = emitc.cast %11 : index to i64
+    %13 = emitc.cast %10 : index to i64
+    %14 = emitc.cast %10 : index to i64
+    %15 = metal.device_make_command_queue %5 : (index) -> index
+    %16 = metal.command_queue_make_command_buffer main_kernel %15, %12, %13, %14: (index, i64, i64, i64) -> index
+    %17 = "emitc.constant"() <{value = 0 : i64}> : () -> i64
+    metal.command_buffer_add_buffer %16, %9, %17 : (index, index, i64) -> ()
+    metal.command_buffer_commit %16 : index
+    metal.command_buffer_wait_until_completed %16 : index
+    metal.release %16 : index
+    metal.release %9 : index
     return
   }
   gpu.module @main_kernel {

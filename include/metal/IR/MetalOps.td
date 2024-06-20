@@ -130,11 +130,12 @@ def MatmulOp : Metal_Op<"matmul"> {
                                         Int_Type:$bufferB, Int_Type:$rowsB, Int_Type:$columnsB,
                                         Int_Type:$bufferC,
                                         Int_Type:$elementSize);
+  let results = (outs Index);
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
   let assemblyFormat = "$queue `,` $bufferA `<` $rowsA `:`$columnsA `>` $bufferB `<` $rowsB `:`$columnsB `>` $bufferC `,` $elementSize attr-dict `:` type(operands)";
- //let assemblyFormat = "$queue `,` $bufferA `,`  $bufferB `,` $bufferC `,` $elementSize attr-dict `:` type(operands)";
+  //let assemblyFormat = "$queue `,` $bufferA `,`  $bufferB `,` $bufferC `,` $elementSize attr-dict `:` type(operands)";
 
 }
 

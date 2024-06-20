@@ -1191,9 +1191,32 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     metal::MatmulOp op) {
+ if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
+          op->getResult(0), "intptr_t")))
+          return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
+
+  os << "_MetalMatMul(";
+  os << emitter.getOrCreateName(op.getQueue());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getBufferA());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getRowsA());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getColumnsA());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getBufferB());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getRowsB());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getColumnsB());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getBufferC());
+  os << ", ";
+  os << emitter.getOrCreateName(op.getElementSize());
+  os << ")";
  
   return success();
 }

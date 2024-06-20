@@ -362,6 +362,7 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
 
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
         op.getLoc(), 
+        rewriter.getIndexType(),
         getQueue(rewriter, op.getLoc()), 
         adaptor.getOperands()[0],
         adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
@@ -371,8 +372,8 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
         adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
         adaptor.getOperands()[2],
         intValue);
-    rewriter.replaceOp(op, rep);
-    // rewriter.eraseOp(op);
+    //rewriter.replaceOp(op, rep);
+    rewriter.eraseOp(op);
 
     return success();
   }
