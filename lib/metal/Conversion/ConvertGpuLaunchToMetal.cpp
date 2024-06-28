@@ -9,11 +9,6 @@
 #include "mlir/Dialect/Tosa/IR/TosaOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 
-
-
-
-#include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-
 #include "mlir/Transforms/DialectConversion.h"
 #include <iostream>
 
@@ -36,9 +31,7 @@ bool isInsideGpuSpace(Operation *op) {
 // Funzione per controllare se il memref è definito tramite memref::AllocOp
 bool isAllocatedByAllocOp(Value value) {
   if (auto definingOp = value.getDefiningOp()) {
-   
     if(isa<memref::AllocOp>(definingOp)) {
-      definingOp->dump();
       return false;
     }
   }

@@ -45,8 +45,6 @@ bool shouldMapToUnsigned(IntegerType::SignednessSemantics val) {
   }
 }
 
-// TODO dovrei convertire returnOp in modo che creasse anche le metal::ReleaseOp
-// per il device e per la queue
 SmallVector<Value, 4> getMemrefDims(Operation *op,
                                     ConversionPatternRewriter &rewriter,
                                     MemRefType mt, Type type) {
@@ -144,14 +142,14 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
     auto deviceOp =
         llvm::dyn_cast_or_null<metal::DeviceMakeBufferOp>(adaptedOp);
     if (!deviceOp) {
-      auto rep = rewriter.create<mlir::metal::StoreOp>(
-          op.getLoc(), adaptor.getValue(), op.getMemref(), op.getIndices(),
-          getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
-                        rewriter.getI64Type()));
+      // auto rep = rewriter.create<mlir::metal::StoreOp>(
+      //     op.getLoc(), adaptor.getValue(), op.getMemref(), op.getIndices(),
+      //     getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
+      //                   rewriter.getI64Type()));
 
-      rewriter.replaceOp(op, rep);
+      // rewriter.replaceOp(op, rep);
 
-      return success();
+      return failure();
     }
 
     auto rep = rewriter.create<mlir::metal::StoreOp>(
