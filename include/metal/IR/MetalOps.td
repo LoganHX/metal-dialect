@@ -13,10 +13,10 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/EnumAttr.td"
 include "mlir/IR/BuiltinAttributeInterfaces.td"
 
-def Metal_Type : AnyTypeOf<[I1, UI8, UI16, UI32, UI64, SI8, SI16, I32, SI32, SI64,
+def Metal_Type : AnyTypeOf<[I1, UI8, I8, UI16, UI32, UI64, SI8, SI16, I32, SI32, SI64,
                             F16, F32]>;
 
-def Int_Type : AnyTypeOf<[I1, I32, I64, UI8, UI16, UI32, UI64, SI8, SI16, SI32, SI64, Index]>; 
+def Int_Type : AnyTypeOf<[I1, I8, I32, I64, UI8, UI16, UI32, UI64, SI8, SI16, SI32, SI64, Index]>; 
 //===----------------------------------------------------------------------===//
 // ModuleOp
 //===----------------------------------------------------------------------===//

@@ -106,8 +106,16 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
 
     auto deviceOp =
         llvm::dyn_cast_or_null<metal::DeviceMakeBufferOp>(adaptedOp);
+    
     if (!deviceOp) {
-      op.dump();
+      // auto rep = rewriter.create<mlir::metal::GetElementOp>(
+      //     op.getLoc(), op.getMemRefType().getElementType(), op.getMemref(), op.getIndices(),
+      //     getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
+      //                   rewriter.getI64Type()));
+
+      // rewriter.replaceOp(op, rep);
+
+      // return success();
       return failure();
     }
 
@@ -136,9 +144,16 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
     auto deviceOp =
         llvm::dyn_cast_or_null<metal::DeviceMakeBufferOp>(adaptedOp);
     if (!deviceOp) {
-      op.dump();
-      return failure();
+      auto rep = rewriter.create<mlir::metal::StoreOp>(
+          op.getLoc(), adaptor.getValue(), op.getMemref(), op.getIndices(),
+          getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
+                        rewriter.getI64Type()));
+
+      rewriter.replaceOp(op, rep);
+
+      return success();
     }
+
     auto rep = rewriter.create<mlir::metal::StoreOp>(
         op.getLoc(), adaptor.getValue(), adaptor.getMemref(),
         adaptor.getIndices(), deviceOp.getDims());
@@ -158,7 +173,7 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
   LogicalResult
   matchAndRewrite(memref::AllocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-   
+
     // isStorageModeManaged
     auto boolValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getI1Type(),
@@ -265,6 +280,22 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
     return success();
   }
 };
+
+// struct ConvertReturnOp : public OpConversionPattern<func::ReturnOp> {
+//   ConvertReturnOp(mlir::MLIRContext *context)
+//       : OpConversionPattern<func::ReturnOp>(context) {}
+
+//   using OpConversionPattern::OpConversionPattern;
+
+//   LogicalResult
+//   matchAndRewrite(func::ReturnOp op, OpAdaptor adaptor,
+//                   ConversionPatternRewriter &rewriter) const override {
+ 
+//     rewriter.eraseOp(op);
+
+//     return success();
+//   }
+// };
 
 } // end namespace
 

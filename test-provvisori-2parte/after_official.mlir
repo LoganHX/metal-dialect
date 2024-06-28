@@ -13,7 +13,7 @@ module {
   memref.global "private" constant @__constant_1x1xi32 : memref<1x1xi32> = dense<-128> {alignment = 64 : i64}
   memref.global "private" constant @__constant_1x1xf32_0 : memref<1x1xf32> = dense<-1.280000e+02> {alignment = 64 : i64}
   memref.global "private" constant @__constant_1x1xf32 : memref<1x1xf32> = dense<3.906250e-03> {alignment = 64 : i64}
-  func.func @main(%arg0: memref<1x28x28x1xf32, strided<[?, ?, ?, ?], offset: ?>> {ml_program.identifier = "serving_default_keras_tensor"}) -> (memref<1x10xf32> {ml_program.identifier = "StatefulPartitionedCall_1"}) {
+  func.func @main(%arg0: memref<1x28x28x1xf32, strided<[?, ?, ?, ?], offset: ?>> {ml_program.identifier = "serving_default_keras_tensor"}) {
     %0 = "emitc.constant"() <{value = 10 : index}> : () -> index
     %1 = "emitc.constant"() <{value = 64 : index}> : () -> index
     %2 = "emitc.constant"() <{value = 784 : index}> : () -> index
@@ -36,26 +36,25 @@ module {
     %19 = "emitc.constant"() <{value = 2147483647 : i32}> : () -> i32
     %20 = "emitc.constant"() <{value = 2.14748365E+9 : f32}> : () -> f32
     %21 = "emitc.constant"() <{value = -2.14748365E+9 : f32}> : () -> f32
-    %22 = memref.get_global @__constant_1x1xf32 : memref<1x1xf32>
-    %23 = memref.get_global @__constant_1x1xf32_0 : memref<1x1xf32>
-    %24 = memref.get_global @__constant_1x1xi32 : memref<1x1xi32>
-    %25 = memref.get_global @__constant_1x1xf32_1 : memref<1x1xf32>
-    %26 = memref.get_global @__constant_1x1xf32_2 : memref<1x1xf32>
-    %27 = memref.get_global @__constant_1x1xf32_3 : memref<1x1xf32>
-    %28 = memref.get_global @__constant_1x1x1x1xi32 : memref<1x1x1x1xi32>
-    %29 = memref.get_global @__constant_10xi32 : memref<10xi32>
-    %30 = memref.get_global @__constant_10x64xi8 : memref<10x64xi8>
-    %31 = memref.get_global @__constant_64xi32 : memref<64xi32>
-    %32 = memref.get_global @__constant_64x784xi8 : memref<64x784xi8>
-    %33 = memref.get_global @__constant_1x1x1x1xf32 : memref<1x1x1x1xf32>
+    %22 = memref.get_global @__constant_1x1xf32_0 : memref<1x1xf32>
+    %23 = memref.get_global @__constant_1x1xi32 : memref<1x1xi32>
+    %24 = memref.get_global @__constant_1x1xf32_1 : memref<1x1xf32>
+    %25 = memref.get_global @__constant_1x1xf32_2 : memref<1x1xf32>
+    %26 = memref.get_global @__constant_1x1xf32_3 : memref<1x1xf32>
+    %27 = memref.get_global @__constant_1x1x1x1xi32 : memref<1x1x1x1xi32>
+    %28 = memref.get_global @__constant_10xi32 : memref<10xi32>
+    %29 = memref.get_global @__constant_10x64xi8 : memref<10x64xi8>
+    %30 = memref.get_global @__constant_64xi32 : memref<64xi32>
+    %31 = memref.get_global @__constant_64x784xi8 : memref<64x784xi8>
+    %32 = memref.get_global @__constant_1x1x1x1xf32 : memref<1x1x1x1xf32>
     %alloc = memref.alloc() {alignment = 64 : i64} : memref<1x28x28x1xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %3 step %4 {
         emitc.for %arg3 = %5 to %3 step %4 {
           emitc.for %arg4 = %5 to %4 step %4 {
-            %34 = memref.load %33[%5, %5, %5, %5] : memref<1x1x1x1xf32>
-            %35 = emitc.mul %34, %34 : (f32, f32) -> f32
-            memref.store %35, %alloc[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xf32>
+            %33 = memref.load %32[%5, %5, %5, %5] : memref<1x1x1x1xf32>
+            %34 = emitc.mul %33, %33 : (f32, f32) -> f32
+            memref.store %34, %alloc[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xf32>
           }
         }
       }
@@ -65,22 +64,22 @@ module {
       emitc.for %arg2 = %5 to %3 step %4 {
         emitc.for %arg3 = %5 to %3 step %4 {
           emitc.for %arg4 = %5 to %4 step %4 {
-            %34 = memref.load %alloc[%5, %arg2, %arg3, %5] : memref<1x28x28x1xf32>
-            %35 = math.roundeven %34 : f32
-            %36 = emitc.cmp gt, %35, %21 : (f32, f32) -> i1
-            %37 = emitc.cmp ne, %35, %35 : (f32, f32) -> i1
-            %38 = emitc.cmp ne, %21, %21 : (f32, f32) -> i1
-            %39 = emitc.logical_or %37, %38 : i1, i1
-            %40 = emitc.logical_or %39, %36 : i1, i1
-            %41 = emitc.conditional %40, %35, %21 : f32
-            %42 = emitc.cast %41 : f32 to i32
-            %43 = emitc.cmp ge, %35, %20 : (f32, f32) -> i1
-            %44 = emitc.cmp ne, %35, %35 : (f32, f32) -> i1
-            %45 = emitc.cmp ne, %20, %20 : (f32, f32) -> i1
-            %46 = emitc.logical_or %44, %45 : i1, i1
-            %47 = emitc.logical_or %46, %43 : i1, i1
-            %48 = emitc.conditional %47, %19, %42 : i32
-            memref.store %48, %alloc_0[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xi32>
+            %33 = memref.load %alloc[%5, %arg2, %arg3, %5] : memref<1x28x28x1xf32>
+            %34 = math.roundeven %33 : f32
+            %35 = emitc.cmp gt, %34, %21 : (f32, f32) -> i1
+            %36 = emitc.cmp ne, %34, %34 : (f32, f32) -> i1
+            %37 = emitc.cmp ne, %21, %21 : (f32, f32) -> i1
+            %38 = emitc.logical_or %36, %37 : i1, i1
+            %39 = emitc.logical_or %38, %35 : i1, i1
+            %40 = emitc.conditional %39, %34, %21 : f32
+            %41 = emitc.cast %40 : f32 to i32
+            %42 = emitc.cmp ge, %34, %20 : (f32, f32) -> i1
+            %43 = emitc.cmp ne, %34, %34 : (f32, f32) -> i1
+            %44 = emitc.cmp ne, %20, %20 : (f32, f32) -> i1
+            %45 = emitc.logical_or %43, %44 : i1, i1
+            %46 = emitc.logical_or %45, %42 : i1, i1
+            %47 = emitc.conditional %46, %19, %41 : i32
+            memref.store %47, %alloc_0[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xi32>
           }
         }
       }
@@ -90,13 +89,13 @@ module {
       emitc.for %arg2 = %5 to %3 step %4 {
         emitc.for %arg3 = %5 to %3 step %4 {
           emitc.for %arg4 = %5 to %4 step %4 {
-            %34 = memref.load %alloc_0[%5, %arg2, %arg3, %5] : memref<1x28x28x1xi32>
-            %35 = memref.load %28[%5, %5, %5, %5] : memref<1x1x1x1xi32>
+            %33 = memref.load %alloc_0[%5, %arg2, %arg3, %5] : memref<1x28x28x1xi32>
+            %34 = memref.load %27[%5, %5, %5, %5] : memref<1x1x1x1xi32>
+            %35 = emitc.cast %33 : i32 to ui32
             %36 = emitc.cast %34 : i32 to ui32
-            %37 = emitc.cast %35 : i32 to ui32
-            %38 = emitc.add %36, %37 : (ui32, ui32) -> ui32
-            %39 = emitc.cast %38 : ui32 to i32
-            memref.store %39, %alloc_1[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xi32>
+            %37 = emitc.add %35, %36 : (ui32, ui32) -> ui32
+            %38 = emitc.cast %37 : ui32 to i32
+            memref.store %38, %alloc_1[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xi32>
           }
         }
       }
@@ -106,11 +105,11 @@ module {
       emitc.for %arg2 = %5 to %3 step %4 {
         emitc.for %arg3 = %5 to %3 step %4 {
           emitc.for %arg4 = %5 to %4 step %4 {
-            %34 = memref.load %alloc_1[%5, %arg2, %arg3, %5] : memref<1x28x28x1xi32>
-            %35 = emitc.cast %34 : i32 to ui32
-            %36 = emitc.cast %35 : ui32 to ui8
-            %37 = emitc.cast %36 : ui8 to i8
-            memref.store %37, %alloc_2[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xi8>
+            %33 = memref.load %alloc_1[%5, %arg2, %arg3, %5] : memref<1x28x28x1xi32>
+            %34 = emitc.cast %33 : i32 to ui32
+            %35 = emitc.cast %34 : ui32 to ui8
+            %36 = emitc.cast %35 : ui8 to i8
+            memref.store %36, %alloc_2[%arg1, %arg2, %arg3, %arg4] : memref<1x28x28x1xi8>
           }
         }
       }
@@ -118,177 +117,177 @@ module {
     %alloc_3 = memref.alloc() {alignment = 64 : i64} : memref<784x64xi8>
     emitc.for %arg1 = %5 to %2 step %4 {
       emitc.for %arg2 = %5 to %1 step %4 {
-        %34 = memref.load %32[%arg2, %arg1] : memref<64x784xi8>
-        memref.store %34, %alloc_3[%arg1, %arg2] : memref<784x64xi8>
+        %33 = memref.load %31[%arg2, %arg1] : memref<64x784xi8>
+        memref.store %33, %alloc_3[%arg1, %arg2] : memref<784x64xi8>
       }
     }
     %alloc_4 = memref.alloc() {alignment = 64 : i64} : memref<1x64xi32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %1 step %4 {
-        %34 = memref.load %31[%arg2] : memref<64xi32>
-        memref.store %34, %alloc_4[%arg1, %arg2] : memref<1x64xi32>
+        %33 = memref.load %30[%arg2] : memref<64xi32>
+        memref.store %33, %alloc_4[%arg1, %arg2] : memref<1x64xi32>
       }
     }
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %1 step %4 {
         emitc.for %arg3 = %5 to %2 step %4 {
-          %34 = affine.apply #map(%arg3)
-          %35 = affine.apply #map1(%arg3)
-          %36 = memref.load %alloc_2[%arg1, %34, %35, %5] : memref<1x28x28x1xi8>
-          %37 = memref.load %alloc_3[%arg3, %arg2] : memref<784x64xi8>
-          %38 = memref.load %alloc_4[%arg1, %arg2] : memref<1x64xi32>
-          %39 = emitc.cast %36 : i8 to i32
-          %40 = emitc.cast %39 : i32 to ui32
-          %41 = emitc.cast %18 : i32 to ui32
-          %42 = emitc.sub %40, %41 : (ui32, ui32) -> ui32
-          %43 = emitc.cast %42 : ui32 to i32
-          %44 = emitc.cast %37 : i8 to i32
+          %33 = affine.apply #map(%arg3)
+          %34 = affine.apply #map1(%arg3)
+          %35 = memref.load %alloc_2[%arg1, %33, %34, %5] : memref<1x28x28x1xi8>
+          %36 = memref.load %alloc_3[%arg3, %arg2] : memref<784x64xi8>
+          %37 = memref.load %alloc_4[%arg1, %arg2] : memref<1x64xi32>
+          %38 = emitc.cast %35 : i8 to i32
+          %39 = emitc.cast %38 : i32 to ui32
+          %40 = emitc.cast %18 : i32 to ui32
+          %41 = emitc.sub %39, %40 : (ui32, ui32) -> ui32
+          %42 = emitc.cast %41 : ui32 to i32
+          %43 = emitc.cast %36 : i8 to i32
+          %44 = emitc.cast %42 : i32 to ui32
           %45 = emitc.cast %43 : i32 to ui32
-          %46 = emitc.cast %44 : i32 to ui32
-          %47 = emitc.mul %45, %46 : (ui32, ui32) -> ui32
-          %48 = emitc.cast %47 : ui32 to i32
-          %49 = emitc.cast %38 : i32 to ui32
-          %50 = emitc.cast %48 : i32 to ui32
-          %51 = emitc.add %49, %50 : (ui32, ui32) -> ui32
-          %52 = emitc.cast %51 : ui32 to i32
-          memref.store %52, %alloc_4[%arg1, %arg2] : memref<1x64xi32>
+          %46 = emitc.mul %44, %45 : (ui32, ui32) -> ui32
+          %47 = emitc.cast %46 : ui32 to i32
+          %48 = emitc.cast %37 : i32 to ui32
+          %49 = emitc.cast %47 : i32 to ui32
+          %50 = emitc.add %48, %49 : (ui32, ui32) -> ui32
+          %51 = emitc.cast %50 : ui32 to i32
+          memref.store %51, %alloc_4[%arg1, %arg2] : memref<1x64xi32>
         }
       }
     }
     %alloc_5 = memref.alloc() {alignment = 64 : i64} : memref<1x64xi8>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %1 step %4 {
-        %34 = memref.load %alloc_4[%arg1, %arg2] : memref<1x64xi32>
-        %35 = emitc.cast %34 : i32 to i64
-        %36 = emitc.cast %35 : i64 to ui64
-        %37 = emitc.cast %9 : i64 to ui64
-        %38 = emitc.mul %36, %37 : (ui64, ui64) -> ui64
-        %39 = emitc.cast %38 : ui64 to i64
-        %40 = emitc.cast %39 : i64 to ui64
-        %41 = emitc.cast %8 : i64 to ui64
-        %42 = emitc.add %40, %41 : (ui64, ui64) -> ui64
-        %43 = emitc.cast %42 : ui64 to i64
-        %44 = emitc.cmp ge, %34, %17 : (i32, i32) -> i1
-        %45 = emitc.conditional %44, %16, %15 : i64
-        %46 = emitc.cast %45 : i64 to ui64
-        %47 = emitc.cast %43 : i64 to ui64
-        %48 = emitc.add %46, %47 : (ui64, ui64) -> ui64
-        %49 = emitc.cast %48 : ui64 to i64
-        %50 = emitc.cast %49 : i64 to ui64
-        %51 = emitc.cast %50 : ui64 to ui32
-        %52 = emitc.cast %51 : ui32 to i32
-        %53 = emitc.cast %52 : i32 to ui32
-        %54 = emitc.cast %18 : i32 to ui32
-        %55 = emitc.add %53, %54 : (ui32, ui32) -> ui32
-        %56 = emitc.cast %55 : ui32 to i32
-        %57 = emitc.cmp gt, %56, %18 : (i32, i32) -> i1
-        %58 = emitc.conditional %57, %56, %18 : i32
-        %59 = emitc.cmp lt, %58, %14 : (i32, i32) -> i1
-        %60 = emitc.conditional %59, %58, %14 : i32
-        %61 = emitc.cast %60 : i32 to ui32
-        %62 = emitc.cast %61 : ui32 to ui8
-        %63 = emitc.cast %62 : ui8 to i8
-        memref.store %63, %alloc_5[%arg1, %arg2] : memref<1x64xi8>
+        %33 = memref.load %alloc_4[%arg1, %arg2] : memref<1x64xi32>
+        %34 = emitc.cast %33 : i32 to i64
+        %35 = emitc.cast %34 : i64 to ui64
+        %36 = emitc.cast %9 : i64 to ui64
+        %37 = emitc.mul %35, %36 : (ui64, ui64) -> ui64
+        %38 = emitc.cast %37 : ui64 to i64
+        %39 = emitc.cast %38 : i64 to ui64
+        %40 = emitc.cast %8 : i64 to ui64
+        %41 = emitc.add %39, %40 : (ui64, ui64) -> ui64
+        %42 = emitc.cast %41 : ui64 to i64
+        %43 = emitc.cmp ge, %33, %17 : (i32, i32) -> i1
+        %44 = emitc.conditional %43, %16, %15 : i64
+        %45 = emitc.cast %44 : i64 to ui64
+        %46 = emitc.cast %42 : i64 to ui64
+        %47 = emitc.add %45, %46 : (ui64, ui64) -> ui64
+        %48 = emitc.cast %47 : ui64 to i64
+        %49 = emitc.cast %48 : i64 to ui64
+        %50 = emitc.cast %49 : ui64 to ui32
+        %51 = emitc.cast %50 : ui32 to i32
+        %52 = emitc.cast %51 : i32 to ui32
+        %53 = emitc.cast %18 : i32 to ui32
+        %54 = emitc.add %52, %53 : (ui32, ui32) -> ui32
+        %55 = emitc.cast %54 : ui32 to i32
+        %56 = emitc.cmp gt, %55, %18 : (i32, i32) -> i1
+        %57 = emitc.conditional %56, %55, %18 : i32
+        %58 = emitc.cmp lt, %57, %14 : (i32, i32) -> i1
+        %59 = emitc.conditional %58, %57, %14 : i32
+        %60 = emitc.cast %59 : i32 to ui32
+        %61 = emitc.cast %60 : ui32 to ui8
+        %62 = emitc.cast %61 : ui8 to i8
+        memref.store %62, %alloc_5[%arg1, %arg2] : memref<1x64xi8>
       }
     }
     %alloc_6 = memref.alloc() {alignment = 64 : i64} : memref<64x10xi8>
     emitc.for %arg1 = %5 to %1 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %30[%arg2, %arg1] : memref<10x64xi8>
-        memref.store %34, %alloc_6[%arg1, %arg2] : memref<64x10xi8>
+        %33 = memref.load %29[%arg2, %arg1] : memref<10x64xi8>
+        memref.store %33, %alloc_6[%arg1, %arg2] : memref<64x10xi8>
       }
     }
     %alloc_7 = memref.alloc() {alignment = 64 : i64} : memref<1x10xi32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %29[%arg2] : memref<10xi32>
-        memref.store %34, %alloc_7[%arg1, %arg2] : memref<1x10xi32>
+        %33 = memref.load %28[%arg2] : memref<10xi32>
+        memref.store %33, %alloc_7[%arg1, %arg2] : memref<1x10xi32>
       }
     }
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
         emitc.for %arg3 = %5 to %1 step %4 {
-          %34 = memref.load %alloc_5[%arg1, %arg3] : memref<1x64xi8>
-          %35 = memref.load %alloc_6[%arg3, %arg2] : memref<64x10xi8>
-          %36 = memref.load %alloc_7[%arg1, %arg2] : memref<1x10xi32>
-          %37 = emitc.cast %34 : i8 to i32
-          %38 = emitc.cast %37 : i32 to ui32
-          %39 = emitc.cast %18 : i32 to ui32
-          %40 = emitc.sub %38, %39 : (ui32, ui32) -> ui32
-          %41 = emitc.cast %40 : ui32 to i32
-          %42 = emitc.cast %35 : i8 to i32
+          %33 = memref.load %alloc_5[%arg1, %arg3] : memref<1x64xi8>
+          %34 = memref.load %alloc_6[%arg3, %arg2] : memref<64x10xi8>
+          %35 = memref.load %alloc_7[%arg1, %arg2] : memref<1x10xi32>
+          %36 = emitc.cast %33 : i8 to i32
+          %37 = emitc.cast %36 : i32 to ui32
+          %38 = emitc.cast %18 : i32 to ui32
+          %39 = emitc.sub %37, %38 : (ui32, ui32) -> ui32
+          %40 = emitc.cast %39 : ui32 to i32
+          %41 = emitc.cast %34 : i8 to i32
+          %42 = emitc.cast %40 : i32 to ui32
           %43 = emitc.cast %41 : i32 to ui32
-          %44 = emitc.cast %42 : i32 to ui32
-          %45 = emitc.mul %43, %44 : (ui32, ui32) -> ui32
-          %46 = emitc.cast %45 : ui32 to i32
-          %47 = emitc.cast %36 : i32 to ui32
-          %48 = emitc.cast %46 : i32 to ui32
-          %49 = emitc.add %47, %48 : (ui32, ui32) -> ui32
-          %50 = emitc.cast %49 : ui32 to i32
-          memref.store %50, %alloc_7[%arg1, %arg2] : memref<1x10xi32>
+          %44 = emitc.mul %42, %43 : (ui32, ui32) -> ui32
+          %45 = emitc.cast %44 : ui32 to i32
+          %46 = emitc.cast %35 : i32 to ui32
+          %47 = emitc.cast %45 : i32 to ui32
+          %48 = emitc.add %46, %47 : (ui32, ui32) -> ui32
+          %49 = emitc.cast %48 : ui32 to i32
+          memref.store %49, %alloc_7[%arg1, %arg2] : memref<1x10xi32>
         }
       }
     }
     %alloc_8 = memref.alloc() {alignment = 64 : i64} : memref<1x10xi8>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_7[%arg1, %arg2] : memref<1x10xi32>
-        %35 = emitc.cast %34 : i32 to i64
-        %36 = emitc.cast %35 : i64 to ui64
-        %37 = emitc.cast %7 : i64 to ui64
-        %38 = emitc.mul %36, %37 : (ui64, ui64) -> ui64
-        %39 = emitc.cast %38 : ui64 to i64
-        %40 = emitc.cast %39 : i64 to ui64
-        %41 = emitc.cast %6 : i64 to ui64
-        %42 = emitc.add %40, %41 : (ui64, ui64) -> ui64
-        %43 = emitc.cast %42 : ui64 to i64
-        %44 = emitc.cmp ge, %34, %17 : (i32, i32) -> i1
-        %45 = emitc.conditional %44, %16, %15 : i64
-        %46 = emitc.cast %45 : i64 to ui64
-        %47 = emitc.cast %43 : i64 to ui64
-        %48 = emitc.add %46, %47 : (ui64, ui64) -> ui64
-        %49 = emitc.cast %48 : ui64 to i64
-        %50 = emitc.cast %49 : i64 to ui64
-        %51 = emitc.cast %50 : ui64 to ui32
-        %52 = emitc.cast %51 : ui32 to i32
-        %53 = emitc.cast %52 : i32 to ui32
-        %54 = emitc.cast %13 : i32 to ui32
-        %55 = emitc.add %53, %54 : (ui32, ui32) -> ui32
-        %56 = emitc.cast %55 : ui32 to i32
-        %57 = emitc.cmp gt, %56, %18 : (i32, i32) -> i1
-        %58 = emitc.conditional %57, %56, %18 : i32
-        %59 = emitc.cmp lt, %58, %14 : (i32, i32) -> i1
-        %60 = emitc.conditional %59, %58, %14 : i32
-        %61 = emitc.cast %60 : i32 to ui32
-        %62 = emitc.cast %61 : ui32 to ui8
-        %63 = emitc.cast %62 : ui8 to i8
-        memref.store %63, %alloc_8[%arg1, %arg2] : memref<1x10xi8>
+        %33 = memref.load %alloc_7[%arg1, %arg2] : memref<1x10xi32>
+        %34 = emitc.cast %33 : i32 to i64
+        %35 = emitc.cast %34 : i64 to ui64
+        %36 = emitc.cast %7 : i64 to ui64
+        %37 = emitc.mul %35, %36 : (ui64, ui64) -> ui64
+        %38 = emitc.cast %37 : ui64 to i64
+        %39 = emitc.cast %38 : i64 to ui64
+        %40 = emitc.cast %6 : i64 to ui64
+        %41 = emitc.add %39, %40 : (ui64, ui64) -> ui64
+        %42 = emitc.cast %41 : ui64 to i64
+        %43 = emitc.cmp ge, %33, %17 : (i32, i32) -> i1
+        %44 = emitc.conditional %43, %16, %15 : i64
+        %45 = emitc.cast %44 : i64 to ui64
+        %46 = emitc.cast %42 : i64 to ui64
+        %47 = emitc.add %45, %46 : (ui64, ui64) -> ui64
+        %48 = emitc.cast %47 : ui64 to i64
+        %49 = emitc.cast %48 : i64 to ui64
+        %50 = emitc.cast %49 : ui64 to ui32
+        %51 = emitc.cast %50 : ui32 to i32
+        %52 = emitc.cast %51 : i32 to ui32
+        %53 = emitc.cast %13 : i32 to ui32
+        %54 = emitc.add %52, %53 : (ui32, ui32) -> ui32
+        %55 = emitc.cast %54 : ui32 to i32
+        %56 = emitc.cmp gt, %55, %18 : (i32, i32) -> i1
+        %57 = emitc.conditional %56, %55, %18 : i32
+        %58 = emitc.cmp lt, %57, %14 : (i32, i32) -> i1
+        %59 = emitc.conditional %58, %57, %14 : i32
+        %60 = emitc.cast %59 : i32 to ui32
+        %61 = emitc.cast %60 : ui32 to ui8
+        %62 = emitc.cast %61 : ui8 to i8
+        memref.store %62, %alloc_8[%arg1, %arg2] : memref<1x10xi8>
       }
     }
     %alloc_9 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_8[%5, %arg2] : memref<1x10xi8>
-        %35 = emitc.cast %34 : i8 to f32
-        memref.store %35, %alloc_9[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_8[%5, %arg2] : memref<1x10xi8>
+        %34 = emitc.cast %33 : i8 to f32
+        memref.store %34, %alloc_9[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_10 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_9[%5, %arg2] : memref<1x10xf32>
-        %35 = memref.load %27[%5, %5] : memref<1x1xf32>
-        %36 = emitc.sub %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_10[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_9[%5, %arg2] : memref<1x10xf32>
+        %34 = memref.load %26[%5, %5] : memref<1x1xf32>
+        %35 = emitc.sub %33, %34 : (f32, f32) -> f32
+        memref.store %35, %alloc_10[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_11 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_10[%5, %arg2] : memref<1x10xf32>
-        %35 = memref.load %26[%5, %5] : memref<1x1xf32>
-        %36 = emitc.mul %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_11[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_10[%5, %arg2] : memref<1x10xf32>
+        %34 = memref.load %25[%5, %5] : memref<1x1xf32>
+        %35 = emitc.mul %33, %34 : (f32, f32) -> f32
+        memref.store %35, %alloc_11[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_12 = memref.alloc() {alignment = 64 : i64} : memref<1xf32>
@@ -297,36 +296,36 @@ module {
     }
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_11[%arg1, %arg2] : memref<1x10xf32>
-        %35 = memref.load %alloc_12[%arg1] : memref<1xf32>
-        %36 = emitc.cmp gt, %34, %35 : (f32, f32) -> i1
+        %33 = memref.load %alloc_11[%arg1, %arg2] : memref<1x10xf32>
+        %34 = memref.load %alloc_12[%arg1] : memref<1xf32>
+        %35 = emitc.cmp gt, %33, %34 : (f32, f32) -> i1
+        %36 = emitc.cmp ne, %33, %33 : (f32, f32) -> i1
         %37 = emitc.cmp ne, %34, %34 : (f32, f32) -> i1
-        %38 = emitc.cmp ne, %35, %35 : (f32, f32) -> i1
-        %39 = emitc.logical_or %37, %38 : i1, i1
-        %40 = emitc.logical_or %39, %36 : i1, i1
-        %41 = emitc.conditional %40, %34, %35 : f32
-        %42 = emitc.cmp ne, %35, %35 : (f32, f32) -> i1
-        %43 = emitc.cmp ne, %35, %35 : (f32, f32) -> i1
-        %44 = emitc.logical_or %42, %43 : i1, i1
-        %45 = emitc.conditional %44, %35, %41 : f32
-        memref.store %45, %alloc_12[%arg1] : memref<1xf32>
+        %38 = emitc.logical_or %36, %37 : i1, i1
+        %39 = emitc.logical_or %38, %35 : i1, i1
+        %40 = emitc.conditional %39, %33, %34 : f32
+        %41 = emitc.cmp ne, %34, %34 : (f32, f32) -> i1
+        %42 = emitc.cmp ne, %34, %34 : (f32, f32) -> i1
+        %43 = emitc.logical_or %41, %42 : i1, i1
+        %44 = emitc.conditional %43, %34, %40 : f32
+        memref.store %44, %alloc_12[%arg1] : memref<1xf32>
       }
     }
     %alloc_13 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_11[%5, %arg2] : memref<1x10xf32>
-        %35 = memref.load %alloc_12[%5] : memref<1xf32>
-        %36 = emitc.sub %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_13[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_11[%5, %arg2] : memref<1x10xf32>
+        %34 = memref.load %alloc_12[%5] : memref<1xf32>
+        %35 = emitc.sub %33, %34 : (f32, f32) -> f32
+        memref.store %35, %alloc_13[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_14 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_13[%5, %arg2] : memref<1x10xf32>
-        %35 = math.exp %34 : f32
-        memref.store %35, %alloc_14[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_13[%5, %arg2] : memref<1x10xf32>
+        %34 = math.exp %33 : f32
+        memref.store %34, %alloc_14[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_15 = memref.alloc() {alignment = 64 : i64} : memref<1xf32>
@@ -335,108 +334,99 @@ module {
     }
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_14[%arg1, %arg2] : memref<1x10xf32>
-        %35 = memref.load %alloc_15[%arg1] : memref<1xf32>
-        %36 = emitc.add %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_15[%arg1] : memref<1xf32>
+        %33 = memref.load %alloc_14[%arg1, %arg2] : memref<1x10xf32>
+        %34 = memref.load %alloc_15[%arg1] : memref<1xf32>
+        %35 = emitc.add %33, %34 : (f32, f32) -> f32
+        memref.store %35, %alloc_15[%arg1] : memref<1xf32>
       }
     }
     %alloc_16 = memref.alloc() {alignment = 64 : i64} : memref<1x1xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %4 step %4 {
-        %34 = memref.load %alloc_15[%5] : memref<1xf32>
-        %35 = emitc.div %10, %34 : (f32, f32) -> f32
-        memref.store %35, %alloc_16[%arg1, %arg2] : memref<1x1xf32>
+        %33 = memref.load %alloc_15[%5] : memref<1xf32>
+        %34 = emitc.div %10, %33 : (f32, f32) -> f32
+        memref.store %34, %alloc_16[%arg1, %arg2] : memref<1x1xf32>
       }
     }
     %alloc_17 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_14[%5, %arg2] : memref<1x10xf32>
-        %35 = memref.load %alloc_16[%5, %5] : memref<1x1xf32>
-        %36 = emitc.mul %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_17[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_14[%5, %arg2] : memref<1x10xf32>
+        %34 = memref.load %alloc_16[%5, %5] : memref<1x1xf32>
+        %35 = emitc.mul %33, %34 : (f32, f32) -> f32
+        memref.store %35, %alloc_17[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_18 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_17[%5, %arg2] : memref<1x10xf32>
-        %35 = memref.load %25[%5, %5] : memref<1x1xf32>
-        %36 = emitc.mul %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_18[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_17[%5, %arg2] : memref<1x10xf32>
+        %34 = memref.load %24[%5, %5] : memref<1x1xf32>
+        %35 = emitc.mul %33, %34 : (f32, f32) -> f32
+        memref.store %35, %alloc_18[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_19 = memref.alloc() {alignment = 64 : i64} : memref<1x10xi32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_18[%5, %arg2] : memref<1x10xf32>
-        %35 = math.roundeven %34 : f32
-        %36 = emitc.cmp gt, %35, %21 : (f32, f32) -> i1
-        %37 = emitc.cmp ne, %35, %35 : (f32, f32) -> i1
-        %38 = emitc.cmp ne, %21, %21 : (f32, f32) -> i1
-        %39 = emitc.logical_or %37, %38 : i1, i1
-        %40 = emitc.logical_or %39, %36 : i1, i1
-        %41 = emitc.conditional %40, %35, %21 : f32
-        %42 = emitc.cast %41 : f32 to i32
-        %43 = emitc.cmp ge, %35, %20 : (f32, f32) -> i1
-        %44 = emitc.cmp ne, %35, %35 : (f32, f32) -> i1
-        %45 = emitc.cmp ne, %20, %20 : (f32, f32) -> i1
-        %46 = emitc.logical_or %44, %45 : i1, i1
-        %47 = emitc.logical_or %46, %43 : i1, i1
-        %48 = emitc.conditional %47, %19, %42 : i32
-        memref.store %48, %alloc_19[%arg1, %arg2] : memref<1x10xi32>
+        %33 = memref.load %alloc_18[%5, %arg2] : memref<1x10xf32>
+        %34 = math.roundeven %33 : f32
+        %35 = emitc.cmp gt, %34, %21 : (f32, f32) -> i1
+        %36 = emitc.cmp ne, %34, %34 : (f32, f32) -> i1
+        %37 = emitc.cmp ne, %21, %21 : (f32, f32) -> i1
+        %38 = emitc.logical_or %36, %37 : i1, i1
+        %39 = emitc.logical_or %38, %35 : i1, i1
+        %40 = emitc.conditional %39, %34, %21 : f32
+        %41 = emitc.cast %40 : f32 to i32
+        %42 = emitc.cmp ge, %34, %20 : (f32, f32) -> i1
+        %43 = emitc.cmp ne, %34, %34 : (f32, f32) -> i1
+        %44 = emitc.cmp ne, %20, %20 : (f32, f32) -> i1
+        %45 = emitc.logical_or %43, %44 : i1, i1
+        %46 = emitc.logical_or %45, %42 : i1, i1
+        %47 = emitc.conditional %46, %19, %41 : i32
+        memref.store %47, %alloc_19[%arg1, %arg2] : memref<1x10xi32>
       }
     }
     %alloc_20 = memref.alloc() {alignment = 64 : i64} : memref<1x10xi32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_19[%5, %arg2] : memref<1x10xi32>
-        %35 = memref.load %24[%5, %5] : memref<1x1xi32>
+        %33 = memref.load %alloc_19[%5, %arg2] : memref<1x10xi32>
+        %34 = memref.load %23[%5, %5] : memref<1x1xi32>
+        %35 = emitc.cast %33 : i32 to ui32
         %36 = emitc.cast %34 : i32 to ui32
-        %37 = emitc.cast %35 : i32 to ui32
-        %38 = emitc.add %36, %37 : (ui32, ui32) -> ui32
-        %39 = emitc.cast %38 : ui32 to i32
-        memref.store %39, %alloc_20[%arg1, %arg2] : memref<1x10xi32>
+        %37 = emitc.add %35, %36 : (ui32, ui32) -> ui32
+        %38 = emitc.cast %37 : ui32 to i32
+        memref.store %38, %alloc_20[%arg1, %arg2] : memref<1x10xi32>
       }
     }
     %alloc_21 = memref.alloc() {alignment = 64 : i64} : memref<1x10xi8>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_20[%5, %arg2] : memref<1x10xi32>
-        %35 = emitc.cast %34 : i32 to ui32
-        %36 = emitc.cast %35 : ui32 to ui8
-        %37 = emitc.cast %36 : ui8 to i8
-        memref.store %37, %alloc_21[%arg1, %arg2] : memref<1x10xi8>
+        %33 = memref.load %alloc_20[%5, %arg2] : memref<1x10xi32>
+        %34 = emitc.cast %33 : i32 to ui32
+        %35 = emitc.cast %34 : ui32 to ui8
+        %36 = emitc.cast %35 : ui8 to i8
+        memref.store %36, %alloc_21[%arg1, %arg2] : memref<1x10xi8>
       }
     }
     %alloc_22 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_21[%5, %arg2] : memref<1x10xi8>
-        %35 = emitc.cast %34 : i8 to f32
-        memref.store %35, %alloc_22[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_21[%5, %arg2] : memref<1x10xi8>
+        %34 = emitc.cast %33 : i8 to f32
+        memref.store %34, %alloc_22[%arg1, %arg2] : memref<1x10xf32>
       }
     }
     %alloc_23 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     emitc.for %arg1 = %5 to %4 step %4 {
       emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_22[%5, %arg2] : memref<1x10xf32>
-        %35 = memref.load %23[%5, %5] : memref<1x1xf32>
-        %36 = emitc.sub %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_23[%arg1, %arg2] : memref<1x10xf32>
+        %33 = memref.load %alloc_22[%5, %arg2] : memref<1x10xf32>
+        %34 = memref.load %22[%5, %5] : memref<1x1xf32>
+        %35 = emitc.sub %33, %34 : (f32, f32) -> f32
+        memref.store %35, %alloc_23[%arg1, %arg2] : memref<1x10xf32>
       }
     }
-    %alloc_24 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
-    emitc.for %arg1 = %5 to %4 step %4 {
-      emitc.for %arg2 = %5 to %0 step %4 {
-        %34 = memref.load %alloc_23[%5, %arg2] : memref<1x10xf32>
-        %35 = memref.load %22[%5, %5] : memref<1x1xf32>
-        %36 = emitc.mul %34, %35 : (f32, f32) -> f32
-        memref.store %36, %alloc_24[%arg1, %arg2] : memref<1x10xf32>
-      }
-    }
-    return %alloc_24 : memref<1x10xf32>
+    return
   }
 }
 

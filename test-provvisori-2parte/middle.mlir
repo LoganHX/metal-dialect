@@ -11,7 +11,7 @@ module {
   memref.global "private" constant @__constant_1x1xi32 : memref<1x1xi32> = dense<-128> {alignment = 64 : i64}
   memref.global "private" constant @__constant_1x1xf32_0 : memref<1x1xf32> = dense<-1.280000e+02> {alignment = 64 : i64}
   memref.global "private" constant @__constant_1x1xf32 : memref<1x1xf32> = dense<3.906250e-03> {alignment = 64 : i64}
-  func.func @main(%arg0: memref<1x28x28x1xf32, strided<[?, ?, ?, ?], offset: ?>> {ml_program.identifier = "serving_default_keras_tensor"}) -> (memref<1x10xf32> {ml_program.identifier = "StatefulPartitionedCall_1"}) {
+  func.func @main(%arg0: memref<1x28x28x1xf32, strided<[?, ?, ?, ?], offset: ?>> {ml_program.identifier = "serving_default_keras_tensor"}) -> () {
     %c10 = arith.constant 10 : index
     %c64 = arith.constant 64 : index
     %c784 = arith.constant 784 : index
@@ -353,16 +353,16 @@ module {
         memref.store %14, %alloc_28[%arg1, %arg2] : memref<1x10xf32>
       }
     }
-    %alloc_29 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
-    emitc.for %arg1 = %c0 to %c1 step %c1 {
-      emitc.for %arg2 = %c0 to %c10 step %c1 {
-        %12 = memref.load %alloc_28[%c0, %arg2] : memref<1x10xf32>
-        %13 = memref.load %0[%c0, %c0] : memref<1x1xf32>
-        %14 = arith.mulf %12, %13 : f32
-        memref.store %14, %alloc_29[%arg1, %arg2] : memref<1x10xf32>
-      }
-    }
-    return %alloc_29 : memref<1x10xf32>
+    // %alloc_29 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
+    // emitc.for %arg1 = %c0 to %c1 step %c1 {
+    //   emitc.for %arg2 = %c0 to %c10 step %c1 {
+    //     %12 = memref.load %alloc_28[%c0, %arg2] : memref<1x10xf32>
+    //     %13 = memref.load %0[%c0, %c0] : memref<1x1xf32>
+    //     %14 = arith.mulf %12, %13 : f32
+    //     memref.store %14, %alloc_29[%arg1, %arg2] : memref<1x10xf32>
+    //   }
+    // }
+    return
   }
 }
 

@@ -7,6 +7,8 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Tosa/IR/TosaOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+
 
 
 
@@ -30,6 +32,30 @@ bool isInsideGpuSpace(Operation *op) {
   }
   return false;
 };
+
+// Funzione per controllare se il memref è definito tramite memref::AllocOp
+bool isAllocatedByAllocOp(Value value) {
+  if (auto definingOp = value.getDefiningOp()) {
+   
+    if(isa<memref::AllocOp>(definingOp)) {
+      definingOp->dump();
+      return false;
+    }
+  }
+  return true;
+};
+
+// Funzione di utilità per controllare se l'operazione è valida
+bool isLoadOrStoreOpValid(Operation *op) {
+  if (auto loadOp = dyn_cast<memref::LoadOp>(op)) {
+    return isAllocatedByAllocOp(loadOp.getMemRef());
+  }
+  if (auto storeOp = dyn_cast<memref::StoreOp>(op)) {
+    return isAllocatedByAllocOp(storeOp.getMemRef());
+  }
+  return false;
+};
+
 namespace {
 struct ConvertGpuLaunchToMetal
     : public impl::ConvertGpuLaunchToMetalBase<ConvertGpuLaunchToMetal> {
@@ -50,6 +76,7 @@ struct ConvertGpuLaunchToMetal
 
     target.addIllegalOp<gpu::LaunchFuncOp>();
 
+    
     target.addIllegalOp<memref::StoreOp>();
     target.addIllegalOp<memref::LoadOp>();
     target.addIllegalOp<memref::AllocOp>();
@@ -60,9 +87,9 @@ struct ConvertGpuLaunchToMetal
     target.addLegalDialect<bufferization::BufferizationDialect>();
 
     target.addDynamicallyLegalOp<memref::LoadOp>(
-        [](memref::LoadOp op) { return isInsideGpuSpace(op); });
+        [](memref::LoadOp op) { return isLoadOrStoreOpValid(op); });
     target.addDynamicallyLegalOp<memref::StoreOp>(
-        [](memref::StoreOp op) { return isInsideGpuSpace(op); });
+        [](memref::StoreOp op) { return isLoadOrStoreOpValid(op); });
 
     RewritePatternSet patterns(&getContext());
     mlir::metal::populateGpuLaunchToMetalConversionPatterns(patterns,
