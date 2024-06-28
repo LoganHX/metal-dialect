@@ -23,7 +23,7 @@ pop_translate=build/debug/tools/mlir-translate/pop-translate
 
 # ./$mlir_opt $output --convert-linalg-to-loops     --convert-scf-to-emitc                 1> $input 
 # ./$mlir_opt $input      --arith-expand    -arith-unsigned-when-equivalent            1> $middle 
-./$mlir_opt $middle     --fold-memref-alias-ops   --convert-arith-to-emitc            1> $input
+./$metal_opt $middle     --fold-memref-alias-ops   --convert-arith-to-emitc            1> $input
 ./$metal_opt $input --convert-gpu-launch-func-to-metal -allow-unregistered-dialect 1> $output
 
 
