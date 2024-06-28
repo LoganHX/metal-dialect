@@ -143,34 +143,31 @@ def MatmulOp : Metal_Op<"matmul"> {
 // StoreOp
 //===----------------------------------------------------------------------===//
 
-def StoreOp : Metal_Op<"store"> {
+def StoreOp : Metal_Op<"store", [SameVariadicOperandSize]> {
   let summary = "Store operation";
 
-  let arguments = (ins Metal_Type:$value, Index:$buffer, Int_Type:$index_x, Int_Type:$index_y, Int_Type:$index_z, UI32:$xSize, UI32:$ySize, UI32:$zSize);
+  let arguments = (ins Metal_Type:$value, Index:$buffer, Variadic<Int_Type>:$indexes, Variadic<Int_Type>:$sizes);
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  //TODO non so se è stata una scelta saggia alleggerire i constraints sui tipi degli index_x, index_y e index_z da UI32 a Int_Type.
-  //Andrebbe visto qualche esempio "ufficiale".
-
-  let assemblyFormat = "$value `,` $buffer `[` $index_x `:`$xSize `]` `[` $index_y `:`$ySize `]` `[` $index_z `:`$zSize `]` attr-dict `:` type(operands)";
+  let assemblyFormat = "$value `,` $buffer `,`  $indexes `,` $sizes `,`  attr-dict `:` type(operands)";
 }
 
 //===----------------------------------------------------------------------===//
 // GetElementOp
 //===----------------------------------------------------------------------===//
 
-def GetElementOp : Metal_Op<"get_element", [Pure]> {
+def GetElementOp : Metal_Op<"get_element", [Pure, SameVariadicOperandSize]> {
   let summary = "Get element operation";
 
-  let arguments = (ins Index:$buffer, Int_Type:$index_x, Int_Type:$index_y, Int_Type:$index_z, UI32:$xSize, UI32:$ySize, UI32:$zSize);
+  let arguments = (ins Index:$buffer, Variadic<Int_Type>:$indexes, Variadic<Int_Type>:$sizes);
   let results = (outs Metal_Type:$result);
 
   //let builders = [OpBuilder<(ins "Value":$buffer, "Value":$index)>];
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  let assemblyFormat = "$buffer `[` $index_x `:`$xSize `]` `[` $index_y `:`$ySize `]` `[` $index_z `:`$zSize `]` attr-dict `:` functional-type(operands, results)";
+  let assemblyFormat = "$buffer `,` $indexes `,` $sizes attr-dict `:` functional-type(operands, results)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -385,17 +382,15 @@ def DeviceMakeBufferOp : Metal_Op<"device_make_buffer"> {
   let summary = "Device make buffer operation";
 
   let arguments = (ins Index:$device, I1:$isStorageModeManaged,
-                       I64:$dimX, I64:$dimY, I64:$dimZ, StrAttr:$stringType);
+                       Variadic<Int_Type>:$dims, TypeAttr:$elementType);
 
   let results = (outs Index:$bufferOp);
 
   let builders = [
-    OpBuilder<(ins "Value":$device, "Value":$isStorageModeManaged, "Value":$dimX, "Value":$dimY, "Value":$dimZ,
-                      "StringRef":$stringType)>
+    OpBuilder<(ins "Value":$device, "Value":$isStorageModeManaged, "ArrayRef<Value>":$dims, "Type":$elementType)>
   ];
 
-  let assemblyFormat = "$device `,`$isStorageModeManaged `,` $dimX `,` $dimY `,` $dimZ `,`$stringType "
-                       "attr-dict `:` functional-type(operands, results)";
+  let assemblyFormat = "$device `,` $isStorageModeManaged `,` $dims `,` $elementType attr-dict `:` functional-type(operands, results)";
 }
 
 

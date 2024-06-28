@@ -15,6 +15,8 @@
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "metal/IR/MetalDialect.h"
 #include "metal/IR/MetalOps.h"
+#include "mlir/Dialect/Bufferization/IR/Bufferization.h"
+
 
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
@@ -55,6 +57,7 @@ void registerToMetalTranslation() {
                         linalg::LinalgDialect,
                         metal::MetalDialect,
                         memref::MemRefDialect,
+                        mlir::bufferization::BufferizationDialect,
                         emitc::EmitCDialect,
                         func::FuncDialect>();
         // clang-format on

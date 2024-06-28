@@ -1,60 +1,14 @@
-void main() {
-  size_t v1 = 1;
-  size_t v2 = 0;
-  size_t v3 = 10;
-  float v4 = 1.021000000e+01f;
-  bool v5 = false;
-  intptr_t v6;
-  v6 = _MetalDeviceMakeDefault();
-  int64_t v7 = 42;
-  int64_t v8 = 1;
-  int64_t v9 = 1;
-  intptr_t v10;
-  v10 = _MetalDeviceMakeBuffer(v6, v5, v7 * v8 * v9, sizeof(float));
-  size_t v11 = 1;
-  size_t v12 = 10;
-  int64_t v13 = (int64_t) v12;
-  int64_t v14 = (int64_t) v11;
-  int64_t v15 = (int64_t) v11;
-  intptr_t v16;
-  v16 = _MetalDeviceMakeCommandQueue(v6);
-  intptr_t v17;
-  v17 = _MetalCommandQueueMakeCommandBufferWithDefaultLibrary(v16, v13, v14, v15, (int8_t *)"main_kernel");
-  int64_t v18 = 0;
-  _MetalCommandBufferAddBuffer(v17, v10, v18);
-  _MetalCommandBufferCommit(v17);
-  _MetalCommandBufferWaitUntilCompleted(v17);
-  _MetalRelease(v17);
-  _MetalRelease(v10);
-  return;
-}
-
-  kernel void main_kernel(device float* v1, uint3 id [[thread_position_in_grid]], uint3 gridDim [[threads_per_grid]]) {
-    size_t v2;
-    v2 = id.x;
-    size_t v3;
-    v3 = id.y;
-    size_t v4;
-    v4 = id.z;
-
-
-
-    size_t v5;
-    v5 = gridDim.x;
-    size_t v6;
-    v6 = gridDim.y;
-    size_t v7;
-    v7 = gridDim.z;
-
-
-
-    size_t v8 = 1;
-    size_t v9 = 0;
-    float v10 = 1.021000000e+01f;
-    v1[(0 * gridDim.x * gridDim.y) + (0 * gridDim.x) + v2] = v10;
-    return;
+module {
+  func.func @main() {
+    %c1 = arith.constant 1 : index
+    %c7 = arith.constant 7 : index
+    %c10 = arith.constant 10 : index
+    %cst = arith.constant 1.021000e+01 : f32
+    %alloc = memref.alloc() : memref<42x42xf32>
+    memref.store %cst, %alloc[%c1, %c7] : memref<42x42xf32>
+    %0 = memref.load %alloc[%c7, %c1] : memref<42x42xf32>
+    memref.dealloc %alloc : memref<42x42xf32>
+    return
   }
-
-
-
+}
 

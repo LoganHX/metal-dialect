@@ -44,128 +44,19 @@ bool shouldMapToUnsigned(IntegerType::SignednessSemantics val) {
     return true;
   }
 }
-StringRef getTypeString(Type type) {
-  // TODO di certo non è la cosa migliore avere questo calco di emitType
-  // dell'emitter di emitC qui, andrebbe estrapolato
-
-  // if (auto memrefType = dyn_cast<MemRefType>(type)) {
-  //   if (failed(emitType(loc, memrefType.getElementType())))
-  //     return failure();
-  //   os << "*";
-  //   return success();
-  // }
-
-  if (auto iType = dyn_cast<IntegerType>(type)) {
-    switch (iType.getWidth()) {
-    case 1:
-      return "bool";
-    case 8:
-      if (shouldMapToUnsigned(iType.getSignedness()))
-        return "uint8_t";
-      else
-        return "int8_t";
-    case 16:
-      if (shouldMapToUnsigned(iType.getSignedness()))
-        return "uint16_t";
-      else
-        return "int16_t";
-    case 32:
-      if (shouldMapToUnsigned(iType.getSignedness()))
-        return "uint32_t";
-      else
-        return "int32_t";
-    case 64:
-      if (shouldMapToUnsigned(iType.getSignedness()))
-        return "uint64_t";
-      else
-        return "int64_t";
-    default:
-      return "";
-    }
-  }
-  if (auto fType = dyn_cast<FloatType>(type)) {
-    switch (fType.getWidth()) {
-    case 32:
-      return "float";
-    case 64:
-      return "double";
-    default:
-      return "";
-    }
-  }
-  if (auto iType = dyn_cast<IndexType>(type))
-    return "size_t";
-  /*
-  // if (auto tType = dyn_cast<TensorType>(type)) {
-  //   if (!tType.hasRank())
-  //     return emitError(loc, "cannot emit unranked tensor type");
-  //   if (!tType.hasStaticShape())
-  //     return emitError(loc, "cannot emit tensor type with non static shape");
-  //   os << "Tensor<";
-  //   if (isa<ArrayType>(tType.getElementType()))
-  //     return emitError(loc, "cannot emit tensor of array type ") << type;
-  //   if (failed(emitType(loc, tType.getElementType())))
-  //     return failure();
-  //   auto shape = tType.getShape();
-  //   for (auto dimSize : shape) {
-  //     os << ", ";
-  //     os << dimSize;
-  //   }
-  //   os << ">";
-  //   return success();
-  // }
-  // if (auto tType = dyn_cast<TupleType>(type))
-  //   return emitTupleType(loc, tType.getTypes());
-  // if (auto oType = dyn_cast<emitc::OpaqueType>(type)) {
-  //   os << oType.getValue();
-  //   return success();
-  // }
-  // if (auto aType = dyn_cast<emitc::ArrayType>(type)) {
-  //   if (failed(emitType(loc, aType.getElementType())))
-  //     return failure();
-  //   for (auto dim : aType.getShape())
-  //     os << "[" << dim << "]";
-  //   return success();
-  // }
-  // if (auto pType = dyn_cast<emitc::PointerType>(type)) {
-  //   if (isa<ArrayType>(pType.getPointee()))
-  //     return emitError(loc, "cannot emit pointer to array type ") << type;
-  //   if (failed(emitType(loc, pType.getPointee())))
-  //     return failure();
-  //   os << "*";
-  //   return success();
-  // }
-  */
-  return "";
-}
 
 // TODO dovrei convertire returnOp in modo che creasse anche le metal::ReleaseOp
 // per il device e per la queue
-emitc::ConstantOp getMemrefDim(Location loc,
-                               ConversionPatternRewriter &rewriter,
-                               MemRefType mt, Type type, size_t dim) {
-  if (mt.getShape().size() > 3)
-    return nullptr; // TODO dovrei emettere un errore
+SmallVector<Value, 4> getMemrefDims(Operation *op,
+                                    ConversionPatternRewriter &rewriter,
+                                    MemRefType mt, Type type) {
+  SmallVector<Value, 4> dims;
+  for (size_t i = 0; i < mt.getShape().size(); i++) {
+    dims.push_back(rewriter.create<emitc::ConstantOp>(
+        op->getLoc(), type, rewriter.getIntegerAttr(type, mt.getDimSize(i))));
+  }
 
-  if (dim > mt.getShape().size() - 1)
-    return rewriter.create<emitc::ConstantOp>(loc, type,
-                                              rewriter.getIntegerAttr(type, 1));
-
-  return rewriter.create<emitc::ConstantOp>(
-      loc, type, rewriter.getIntegerAttr(type, mt.getDimSize(dim)));
-}
-
-mlir::Value getIndex(Location loc, ConversionPatternRewriter &rewriter,
-                     ValueRange indices, size_t dim) {
-  if (indices.size() > 3)
-    return nullptr; // TODO dovrei emettere un errore
-
-  if (dim > indices.size() - 1)
-    return rewriter.create<emitc::ConstantOp>(
-        loc, rewriter.getIntegerType(32, false),
-        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 0));
-
-  return indices[dim];
+  return dims;
 }
 
 mlir::metal::DeviceMakeDefaultOp getDevice(ConversionPatternRewriter &rewriter,
@@ -211,20 +102,21 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
   matchAndRewrite(memref::LoadOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto rep = rewriter.create<mlir::metal::GetElementOp>(
-        op.getLoc(), op.getMemref().getType().getElementType(),
-        adaptor.getMemref(),
-        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
-        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
-        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 2),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
-                     rewriter.getIntegerType(32, false), 0),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
-                     rewriter.getIntegerType(32, false), 1),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
-                     rewriter.getIntegerType(32, false), 2));
+    Operation *adaptedOp = adaptor.getMemref().getDefiningOp();
 
-    rewriter.replaceOp(op, rep);
+    auto deviceOp =
+        llvm::dyn_cast_or_null<metal::DeviceMakeBufferOp>(adaptedOp);
+    if (!deviceOp) {
+      op.dump();
+      return failure();
+    }
+
+    auto rep = rewriter.create<mlir::metal::GetElementOp>(
+        op.getLoc(), deviceOp.getElementTypeAttr().getValue(),
+        adaptor.getMemref(), adaptor.getIndices(), deviceOp.getDims());
+
+    rewriter.replaceOp(op, rep.getResult());
+
     return success();
   }
 };
@@ -239,19 +131,20 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   matchAndRewrite(memref::StoreOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
+    Operation *adaptedOp = adaptor.getMemref().getDefiningOp();
+
+    auto deviceOp =
+        llvm::dyn_cast_or_null<metal::DeviceMakeBufferOp>(adaptedOp);
+    if (!deviceOp) {
+      op.dump();
+      return failure();
+    }
     auto rep = rewriter.create<mlir::metal::StoreOp>(
         op.getLoc(), adaptor.getValue(), adaptor.getMemref(),
-        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 0),
-        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 1),
-        getIndex(op.getLoc(), rewriter, adaptor.getIndices(), 2),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
-                     rewriter.getIntegerType(32, false), 0),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
-                     rewriter.getIntegerType(32, false), 1),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemRefType(),
-                     rewriter.getIntegerType(32, false), 2));
+        adaptor.getIndices(), deviceOp.getDims());
 
-    rewriter.replaceOp(op, rep);
+    rewriter.replaceOp(op, rep); // TODO perché non getResult()?
+
     return success();
   }
 };
@@ -265,21 +158,18 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
   LogicalResult
   matchAndRewrite(memref::AllocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-
+   
     // isStorageModeManaged
     auto boolValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getI1Type(),
         rewriter.getIntegerAttr(rewriter.getI1Type(), 0));
 
+    SmallVector<Value, 4> dims =
+        getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
+                      rewriter.getI64Type());
     auto rep = rewriter.create<mlir::metal::DeviceMakeBufferOp>(
-        op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue,
-        getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),
-                     rewriter.getI64Type(), 0),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),
-                     rewriter.getI64Type(), 1),
-        getMemrefDim(op.getLoc(), rewriter, op.getMemref().getType(),
-                     rewriter.getI64Type(), 2),
-        getTypeString(op.getMemref().getType().getElementType()));
+        op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue, dims,
+        op.getMemref().getType().getElementType());
 
     rewriter.replaceOp(op, rep);
 
@@ -361,18 +251,15 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
         rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
 
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
-        op.getLoc(), 
-        rewriter.getIndexType(),
-        getQueue(rewriter, op.getLoc()), 
+        op.getLoc(), rewriter.getIndexType(), getQueue(rewriter, op.getLoc()),
         adaptor.getOperands()[0],
         adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
         adaptor.getOperands()[1],
         adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
-        adaptor.getOperands()[2],
-        intValue);
-    //rewriter.replaceOp(op, rep);
+        adaptor.getOperands()[2], intValue);
+    // rewriter.replaceOp(op, rep);
     rewriter.eraseOp(op);
 
     return success();

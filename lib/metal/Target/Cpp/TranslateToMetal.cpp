@@ -1284,11 +1284,11 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << ", ";
   os << emitter.getOrCreateName(op.getIsStorageModeManaged());
   os << ", ";
-  os << emitter.getOrCreateName(op.getDimX()) << " * "
-     << emitter.getOrCreateName(op.getDimY()) << " * "
-     << emitter.getOrCreateName(op.getDimZ());
+  // os << emitter.getOrCreateName(op.getDimX()) << " * "
+  //TODO  << emitter.getOrCreateName(op.getDimY()) << " * " TODO
+  //    << emitter.getOrCreateName(op.getDimZ());
   os << ", ";
-  os << "sizeof(" << op.getStringType() << ")";
+  // TODO os << "sizeof(" << op.getStringType() << ")";
   os << ")";
   return success();
 }
@@ -1352,14 +1352,15 @@ static LogicalResult printOperation(MetalEmitter &emitter, metal::StoreOp op) {
   os << "(";
   os << emitter.getOrCreateName(op.getBuffer());
   os << ", ";
-  if (failed(emitter.emitLinearIndex(op.getLoc(),
-                                     emitter.getOrCreateName(op.getIndexX()),
-                                     emitter.getOrCreateName(op.getIndexY()),
-                                     emitter.getOrCreateName(op.getIndexZ()),
-                                     emitter.getOrCreateName(op.getXSize()),
-                                     emitter.getOrCreateName(op.getYSize()),
-                                     emitter.getOrCreateName(op.getZSize()))))
-    return failure();
+  // TODO
+  // if (failed(emitter.emitLinearIndex(op.getLoc(),
+  //                                    emitter.getOrCreateName(op.getIndexX()),
+  //                                    emitter.getOrCreateName(op.getIndexY()),
+  //                                    emitter.getOrCreateName(op.getIndexZ()),
+  //                                    emitter.getOrCreateName(op.getXSize()),
+  //                                    emitter.getOrCreateName(op.getYSize()),
+  //                                    emitter.getOrCreateName(op.getZSize()))))
+  //   return failure();
   os << ", ";
   os << emitter.getOrCreateName(op.getValue());
 
@@ -1381,14 +1382,15 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << "(";
   os << emitter.getOrCreateName(op.getBuffer());
   os << ", ";
-  if (failed(emitter.emitLinearIndex(op.getLoc(),
-                                     emitter.getOrCreateName(op.getIndexX()),
-                                     emitter.getOrCreateName(op.getIndexY()),
-                                     emitter.getOrCreateName(op.getIndexZ()),
-                                     emitter.getOrCreateName(op.getXSize()),
-                                     emitter.getOrCreateName(op.getYSize()),
-                                     emitter.getOrCreateName(op.getZSize()))))
-    return failure();
+  // TODO
+  // if (failed(emitter.emitLinearIndex(op.getLoc(),
+  //                                    emitter.getOrCreateName(op.getIndexX()),
+  //                                    emitter.getOrCreateName(op.getIndexY()),
+  //                                    emitter.getOrCreateName(op.getIndexZ()),
+  //                                    emitter.getOrCreateName(op.getXSize()),
+  //                                    emitter.getOrCreateName(op.getYSize()),
+  //                                    emitter.getOrCreateName(op.getZSize()))))
+  //   return failure();
   os << ")";
   return success();
 }

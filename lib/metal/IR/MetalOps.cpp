@@ -497,18 +497,16 @@ void DeviceMakeCommandQueueOp::build(OpBuilder &builder, OperationState &result,
   result.addTypes(builder.getIndexType());
 };
 
-void DeviceMakeBufferOp::build(OpBuilder &builder, OperationState &result,
-                               Value device, Value isStorageModeManaged,
-                               Value dimX, Value dimY, Value dimZ,
-                               StringRef stringType) {
+void DeviceMakeBufferOp::build(OpBuilder &builder, OperationState &result, 
+                  Value device, Value isStorageModeManaged, 
+                  ArrayRef<Value> dims, mlir::Type elementType) {
   result.addOperands(device);
   result.addOperands(isStorageModeManaged);
-  result.addOperands(dimX);
-  result.addOperands(dimY);
-  result.addOperands(dimZ);
-  result.addAttribute("stringType", builder.getStringAttr(stringType));
+  result.addOperands(dims);
+  result.addAttribute("elementType", mlir::TypeAttr::get(elementType));
   result.addTypes(builder.getIndexType());
 };
+
 
 //===----------------------------------------------------------------------===//
 // Runtime - Buffer
