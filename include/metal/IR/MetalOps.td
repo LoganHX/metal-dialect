@@ -150,7 +150,7 @@ def StoreOp : Metal_Op<"store", [SameVariadicOperandSize]> {
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  let assemblyFormat = "$value `,` $buffer `,`  $indexes `,` $sizes `,`  attr-dict `:` type(operands)";
+  let assemblyFormat = "$value `,` $buffer `,` $indexes `[` $sizes `]` attr-dict `:` type(operands)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -167,7 +167,7 @@ def GetElementOp : Metal_Op<"get_element", [Pure, SameVariadicOperandSize]> {
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  let assemblyFormat = "$buffer `,` $indexes `,` $sizes attr-dict `:` functional-type(operands, results)";
+  let assemblyFormat = "$buffer `,` $indexes `[` $sizes `]` attr-dict `:` functional-type(operands, results)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -390,7 +390,7 @@ def DeviceMakeBufferOp : Metal_Op<"device_make_buffer"> {
     OpBuilder<(ins "Value":$device, "Value":$isStorageModeManaged, "ArrayRef<Value>":$dims, "Type":$elementType)>
   ];
 
-  let assemblyFormat = "$device `,` $isStorageModeManaged `,` $dims `,` $elementType attr-dict `:` functional-type(operands, results)";
+  let assemblyFormat = "$device `,` $isStorageModeManaged `,` $dims `x` $elementType attr-dict `:` functional-type(operands, results)";
 }
 
 

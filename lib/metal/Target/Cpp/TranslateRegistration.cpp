@@ -14,14 +14,20 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "metal/IR/MetalDialect.h"
+#include "mlir/Dialect/Math/IR/Math.h"
 #include "metal/IR/MetalOps.h"
 #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Arith/IR/ValueBoundsOpInterfaceImpl.h"
+#include "mlir/Dialect/Arith/Transforms/BufferDeallocationOpInterfaceImpl.h"
+#include "mlir/Dialect/Arith/Transforms/BufferViewFlowOpInterfaceImpl.h"
+#include "mlir/Dialect/Arith/Transforms/BufferizableOpInterfaceImpl.h"
+
 
 
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 
-#include <iostream>
 
 #include "metal/Target/Cpp/MetalEmitter.h"
 #include "mlir/Tools/mlir-translate/Translation.h"
@@ -56,6 +62,8 @@ void registerToMetalTranslation() {
                         gpu::GPUDialect,
                         linalg::LinalgDialect,
                         metal::MetalDialect,
+                        mlir::arith::ArithDialect,
+                        math::MathDialect,
                         memref::MemRefDialect,
                         mlir::bufferization::BufferizationDialect,
                         emitc::EmitCDialect,

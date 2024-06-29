@@ -23,8 +23,8 @@ pop_translate=build/debug/tools/mlir-translate/pop-translate
 
 # ./$mlir_opt $output --convert-linalg-to-loops     --convert-scf-to-emitc                 1> $input 
 # ./$mlir_opt $input      --arith-expand    -arith-unsigned-when-equivalent            1> $middle 
-./$metal_opt $middle     --fold-memref-alias-ops   --convert-arith-to-emitc            1> $input
-./$metal_opt $input --convert-gpu-launch-func-to-metal -allow-unregistered-dialect 1> $output
+./$metal_opt $middle --fold-memref-alias-ops --memref-expand  --convert-math-to-libm  --arith-expand  1> $input
+./$metal_opt $input  --convert-gpu-launch-func-to-metal -allow-unregistered-dialect --lower-affine --convert-arith-to-emitc --convert-memref-to-emitc 1> $output
 
 
 # # ./$mlir_opt $middle --convert-parallel-loops-to-gpu             1> $output 
@@ -33,7 +33,7 @@ pop_translate=build/debug/tools/mlir-translate/pop-translate
  #./$mlir_opt $input --convert-scf-to-emitc                               1> $middle 
  #./$mlir_opt $middle --convert-arith-to-emitc                    1> $input
  
-#./$pop_translate $middle --mlir-to-metal 1> $output 
+./$pop_translate $output --mlir-to-metal 1> $input 
 
 # Remove tmp files
 # rm $assembly_file
