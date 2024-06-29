@@ -1189,11 +1189,10 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter,
-                                    metal::MatmulOp op) {
- if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
+static LogicalResult printOperation(MetalEmitter &emitter, metal::MatmulOp op) {
+  if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
           op->getResult(0), "intptr_t")))
-          return failure();
+    return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
@@ -1217,7 +1216,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << ", ";
   os << emitter.getOrCreateName(op.getElementSize());
   os << ")";
- 
+
   return success();
 }
 
@@ -1283,12 +1282,12 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << emitter.getOrCreateName(op.getDevice());
   os << ", ";
   os << emitter.getOrCreateName(op.getIsStorageModeManaged());
-  os << ", ";
-  // os << emitter.getOrCreateName(op.getDimX()) << " * "
-  //TODO  << emitter.getOrCreateName(op.getDimY()) << " * " TODO
-  //    << emitter.getOrCreateName(op.getDimZ());
-  os << ", ";
-  // TODO os << "sizeof(" << op.getStringType() << ")";
+
+  for (mlir::Value dim : op.getDims()) {
+    os << ", ";
+    os << emitter.getOrCreateName(dim);
+  }
+
   os << ")";
   return success();
 }
@@ -1351,16 +1350,14 @@ static LogicalResult printOperation(MetalEmitter &emitter, metal::StoreOp op) {
     return failure();
   os << "(";
   os << emitter.getOrCreateName(op.getBuffer());
-  os << ", ";
-  // TODO
-  // if (failed(emitter.emitLinearIndex(op.getLoc(),
-  //                                    emitter.getOrCreateName(op.getIndexX()),
-  //                                    emitter.getOrCreateName(op.getIndexY()),
-  //                                    emitter.getOrCreateName(op.getIndexZ()),
-  //                                    emitter.getOrCreateName(op.getXSize()),
-  //                                    emitter.getOrCreateName(op.getYSize()),
-  //                                    emitter.getOrCreateName(op.getZSize()))))
-  //   return failure();
+  for (mlir::Value index : op.getIndexes()) {
+    os << ", ";
+    os << emitter.getOrCreateName(index);
+  }
+  for (mlir::Value dim : op.getSizes()) {
+    os << ", ";
+    os << emitter.getOrCreateName(dim);
+  }
   os << ", ";
   os << emitter.getOrCreateName(op.getValue());
 
@@ -1381,16 +1378,16 @@ static LogicalResult printOperation(MetalEmitter &emitter,
     return failure();
   os << "(";
   os << emitter.getOrCreateName(op.getBuffer());
-  os << ", ";
-  // TODO
-  // if (failed(emitter.emitLinearIndex(op.getLoc(),
-  //                                    emitter.getOrCreateName(op.getIndexX()),
-  //                                    emitter.getOrCreateName(op.getIndexY()),
-  //                                    emitter.getOrCreateName(op.getIndexZ()),
-  //                                    emitter.getOrCreateName(op.getXSize()),
-  //                                    emitter.getOrCreateName(op.getYSize()),
-  //                                    emitter.getOrCreateName(op.getZSize()))))
-  //   return failure();
+  
+  for (mlir::Value index : op.getIndexes()) {
+    os << ", ";
+    os << emitter.getOrCreateName(index);
+  }
+  for (mlir::Value dim : op.getSizes()) {
+    os << ", ";
+    os << emitter.getOrCreateName(dim);
+  }
+  
   os << ")";
   return success();
 }
@@ -2059,8 +2056,8 @@ LogicalResult MetalEmitter::emitKnownTypeVariableDeclaration(
 
 LogicalResult MetalEmitter::emitType(Location loc, Type type) {
   if (auto memrefType = dyn_cast<MemRefType>(type)) {
-      //Qua dentro dovrebbe entrarci solo lato kernel
-     os << "device ";
+    // Qua dentro dovrebbe entrarci solo lato kernel
+    os << "device ";
     if (failed(emitType(loc, memrefType.getElementType())))
       return failure();
     os << "*";

@@ -19,7 +19,7 @@ pop_translate=build/debug/tools/mlir-translate/pop-translate
 ./$mlir_opt $input --lower-affine                              1> $output 
 ./$mlir_opt $output --convert-arith-to-emitc                    1> $input
 ./$metal_opt $input --convert-gpu-launch-func-to-metal -allow-unregistered-dialect 1> $middle
-#./$pop_translate $middle --mlir-to-metal 1> $output 
+./$pop_translate $middle --mlir-to-metal 1> $output 
 
 # Remove tmp files
 # rm $assembly_file
