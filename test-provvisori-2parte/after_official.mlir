@@ -23,10 +23,8 @@ module {
     %c1 = arith.constant 1 : index
     %c0 = arith.constant 0 : index
     %c274877906944_i64 = arith.constant 274877906944 : i64
-    %c39_i64 = arith.constant 39 : i64
     %c1089145654_i64 = arith.constant 1089145654 : i64
     %c4398046511104_i64 = arith.constant 4398046511104 : i64
-    %c43_i64 = arith.constant 43 : i64
     %c1852112935_i64 = arith.constant 1852112935 : i64
     %cst = arith.constant 1.000000e+00 : f32
     %cst_0 = arith.constant 0.000000e+00 : f32
@@ -148,14 +146,14 @@ module {
         %16 = arith.cmpi sge, %12, %c0_i32 : i32
         %17 = arith.select %16, %c1073741824_i64, %c-1073741824_i64 : i64
         %18 = arith.addi %17, %15 : i64
-        %20 = arith.trunci %18 : i64 to i32
-        %21 = arith.addi %20, %c-128_i32 : i32
-        %22 = arith.cmpi sgt, %21, %c-128_i32 : i32
-        %23 = arith.select %22, %21, %c-128_i32 : i32
-        %24 = arith.cmpi slt, %23, %c127_i32 : i32
-        %25 = arith.select %24, %23, %c127_i32 : i32
-        %26 = arith.trunci %25 : i32 to i8
-        memref.store %26, %alloc_9[%arg1, %arg2] : memref<1x64xi8>
+        %19 = arith.trunci %18 : i64 to i32
+        %20 = arith.addi %19, %c-128_i32 : i32
+        %21 = arith.cmpi sgt, %20, %c-128_i32 : i32
+        %22 = arith.select %21, %20, %c-128_i32 : i32
+        %23 = arith.cmpi slt, %22, %c127_i32 : i32
+        %24 = arith.select %23, %22, %c127_i32 : i32
+        %25 = arith.trunci %24 : i32 to i8
+        memref.store %25, %alloc_9[%arg1, %arg2] : memref<1x64xi8>
       }
     }
     %alloc_10 = memref.alloc() {alignment = 64 : i64} : memref<64x10xi8>
@@ -197,14 +195,14 @@ module {
         %16 = arith.cmpi sge, %12, %c0_i32 : i32
         %17 = arith.select %16, %c1073741824_i64, %c-1073741824_i64 : i64
         %18 = arith.addi %17, %15 : i64
-        %20 = arith.trunci %18 : i64 to i32
-        %21 = arith.addi %20, %c9_i32 : i32
-        %22 = arith.cmpi sgt, %21, %c-128_i32 : i32
-        %23 = arith.select %22, %21, %c-128_i32 : i32
-        %24 = arith.cmpi slt, %23, %c127_i32 : i32
-        %25 = arith.select %24, %23, %c127_i32 : i32
-        %26 = arith.trunci %25 : i32 to i8
-        memref.store %26, %alloc_12[%arg1, %arg2] : memref<1x10xi8>
+        %19 = arith.trunci %18 : i64 to i32
+        %20 = arith.addi %19, %c9_i32 : i32
+        %21 = arith.cmpi sgt, %20, %c-128_i32 : i32
+        %22 = arith.select %21, %20, %c-128_i32 : i32
+        %23 = arith.cmpi slt, %22, %c127_i32 : i32
+        %24 = arith.select %23, %22, %c127_i32 : i32
+        %25 = arith.trunci %24 : i32 to i8
+        memref.store %25, %alloc_12[%arg1, %arg2] : memref<1x10xi8>
       }
     }
     %alloc_13 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>

@@ -31,8 +31,10 @@ bool isInsideGpuSpace(Operation *op) {
 bool doesReturnMemrefFunc(Operation *op) {
   //TODO controlla solo il primo return value, andrebbe estesa per controllare per tutti
   if (auto funcOp = dyn_cast<func::FuncOp>(op)) {
-    if (isa<MemRefType>(funcOp.getResultTypes()[0]))
+    if(funcOp.getResultTypes().size() == 0) return true;
+    if (isa<MemRefType>(funcOp.getResultTypes()[0])){
       return false;
+    }
     return true;
   }
   return true;
@@ -41,8 +43,10 @@ bool doesReturnMemrefFunc(Operation *op) {
 bool doesReturnMemrefReturn(Operation *op) {
   //TODO controlla solo il primo return value, andrebbe estesa per controllare per tutti
   if (auto returnOp = dyn_cast<func::ReturnOp>(op)) {
-    if (isa<MemRefType>(returnOp.getOperand(0).getType()))
+    if (returnOp.getOperands().size() == 0) return true;
+    if (isa<MemRefType>(returnOp.getOperand(0).getType())){
       return false;
+    }
     return true;
   }
   return true;

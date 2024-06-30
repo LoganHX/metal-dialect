@@ -206,8 +206,7 @@ struct MetalEmitter {
                                 StringRef z, StringRef xSize, StringRef ySize,
                                 StringRef zSize);
 
-  LogicalResult emitLinearIndex(Location loc, StringRef xSize, StringRef ySize,
-                                StringRef zSize, SmallVector<Value> indices);
+  LogicalResult emitLinearIndex(Location loc, SmallVector<Value> sizes, SmallVector<Value> indices);
   /// Return the existing or a new name for a Value.
   StringRef getOrCreateName(Value val);
 
@@ -1150,9 +1149,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
-  if (failed(emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x", "gridDim.y",
-                                     "gridDim.z", storeOp.getIndices())))
-    ;
+  // if (failed(emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x", "gridDim.y",
+  //                                    "gridDim.z", storeOp.getIndices())))
+  //   ; TODO
   // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth,
   //                         storeOp.getIndices());
   os << "]";
@@ -1387,6 +1386,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
     os << ", ";
     os << emitter.getOrCreateName(dim);
   }
+
+  emitter.emitLinearIndex(op.getLoc(), op.getSizes(), op.getIndexes());
   
   os << ")";
   return success();
@@ -2220,31 +2221,14 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc, StringRef x,
           success());
 }
 
-LogicalResult MetalEmitter::emitLinearIndex(Location loc, StringRef xSize,
-                                            StringRef ySize, StringRef zSize,
+LogicalResult MetalEmitter::emitLinearIndex(Location loc, SmallVector<Value> sizes,
                                             SmallVector<Value> indices) {
-  if (indices.size() > 3)
-    return failure();
-  if (indices.size() <= 0)
-    return failure();
+  
 
   StringRef x = "0";
-  StringRef y = "0";
-  StringRef z = "0";
+ 
 
-  if (indices.size() == 3) {
-    z = getOrCreateName(indices[2]);
-  }
-  if (indices.size() >= 2) {
-    y = getOrCreateName(indices[1]);
-  }
-  if (indices.size() >= 1) {
-    x = getOrCreateName(indices[0]);
-  }
-  // return (z * xSize * ySize) + (y * xSize) + x;
-
-  return (os << "(" << z << " * " << xSize << " * " << ySize << ") + (" << y
-             << " * " << xSize << ") + " << x,
+  return (os << x,
           success());
 }
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,

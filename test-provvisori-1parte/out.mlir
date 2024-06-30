@@ -12,7 +12,7 @@ void main() {
   v9 = _MetalDeviceMakeBuffer(v8, v5, v6, v7);
   _MetalStore_float(v9, v1, v2, v6, v7, v4);
   float v10;
-  v10 = _MetalLoad_float(v9, v2, v1, v6, v7);
+  v10 = _MetalLoad_float(v9, v2, v1, v6, v70);
   _MetalRelease(v9);
   return;
 }
