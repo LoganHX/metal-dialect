@@ -104,11 +104,12 @@ struct ConvertLoadOp : public OpConversionPattern<memref::LoadOp> {
 
     auto deviceOp =
         llvm::dyn_cast_or_null<metal::DeviceMakeBufferOp>(adaptedOp);
-    
+
     if (!deviceOp) {
       // auto rep = rewriter.create<mlir::metal::GetElementOp>(
-      //     op.getLoc(), op.getMemRefType().getElementType(), op.getMemref(), op.getIndices(),
-      //     getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
+      //     op.getLoc(), op.getMemRefType().getElementType(), op.getMemref(),
+      //     op.getIndices(), getMemrefDims(op.getOperation(), rewriter,
+      //     op.getMemref().getType(),
       //                   rewriter.getI64Type()));
 
       // rewriter.replaceOp(op, rep);
@@ -142,13 +143,6 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
     auto deviceOp =
         llvm::dyn_cast_or_null<metal::DeviceMakeBufferOp>(adaptedOp);
     if (!deviceOp) {
-      // auto rep = rewriter.create<mlir::metal::StoreOp>(
-      //     op.getLoc(), adaptor.getValue(), op.getMemref(), op.getIndices(),
-      //     getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
-      //                   rewriter.getI64Type()));
-
-      // rewriter.replaceOp(op, rep);
-
       return failure();
     }
 
@@ -279,21 +273,45 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
   }
 };
 
-// struct ConvertReturnOp : public OpConversionPattern<func::ReturnOp> {
-//   ConvertReturnOp(mlir::MLIRContext *context)
-//       : OpConversionPattern<func::ReturnOp>(context) {}
+struct ConvertFuncOp : public OpConversionPattern<func::FuncOp> {
+  ConvertFuncOp(mlir::MLIRContext *context)
+      : OpConversionPattern<func::FuncOp>(context) {}
 
-//   using OpConversionPattern::OpConversionPattern;
+  using OpConversionPattern::OpConversionPattern;
 
-//   LogicalResult
-//   matchAndRewrite(func::ReturnOp op, OpAdaptor adaptor,
-//                   ConversionPatternRewriter &rewriter) const override {
- 
-//     rewriter.eraseOp(op);
+  LogicalResult
+  matchAndRewrite(func::FuncOp f, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    std::vector<Type> argument_types;
+    for (auto arg : f.getBody().front().getArguments()) {
+      argument_types.push_back(arg.getType());
+    }
+    std::vector<Type> return_types;
+    return_types.push_back(rewriter.getIndexType());
+    auto newType = FunctionType::get(rewriter.getContext(), argument_types, return_types);
+    rewriter.modifyOpInPlace(f, [&] { f.setFunctionType(newType); });
 
-//     return success();
-//   }
-// };
+    return success();
+  }
+};
+
+struct ConvertReturnOp : public OpConversionPattern<func::ReturnOp> {
+  ConvertReturnOp(mlir::MLIRContext *context)
+      : OpConversionPattern<func::ReturnOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(func::ReturnOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+
+    rewriter.modifyOpInPlace(op,
+                             [&] { op->setOperands(adaptor.getOperands()); });
+
+
+    return success();
+  }
+};
 
 } // end namespace
 
@@ -301,5 +319,6 @@ void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
     RewritePatternSet &patterns, MLIRContext *ctx) {
 
   patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
-                  ConvertDeallocOp, ConvertLoadOp, ConvertMatmulOp>(ctx);
+                  ConvertDeallocOp, ConvertLoadOp, ConvertMatmulOp,
+                  ConvertReturnOp, ConvertFuncOp>(ctx);
 }

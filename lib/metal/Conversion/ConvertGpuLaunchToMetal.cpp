@@ -2,12 +2,12 @@
 #include "metal/Conversion/MetalPasses.h"
 #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
-#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Tosa/IR/TosaOps.h"
-#include "mlir/Dialect/Func/IR/FuncOps.h"
 
 #include "mlir/Transforms/DialectConversion.h"
 #include <iostream>
@@ -28,10 +28,31 @@ bool isInsideGpuSpace(Operation *op) {
   return false;
 };
 
-// Funzione per controllare se il memref è definito tramite memref::AllocOp
+bool doesReturnMemrefFunc(Operation *op) {
+  //TODO controlla solo il primo return value, andrebbe estesa per controllare per tutti
+  if (auto funcOp = dyn_cast<func::FuncOp>(op)) {
+    if (isa<MemRefType>(funcOp.getResultTypes()[0]))
+      return false;
+    return true;
+  }
+  return true;
+}
+
+bool doesReturnMemrefReturn(Operation *op) {
+  //TODO controlla solo il primo return value, andrebbe estesa per controllare per tutti
+  if (auto returnOp = dyn_cast<func::ReturnOp>(op)) {
+    if (isa<MemRefType>(returnOp.getOperand(0).getType()))
+      return false;
+    return true;
+  }
+  return true;
+}
+
+// Check se il memref è definito tramite memref::AllocOp
 bool isAllocatedByAllocOp(Value value) {
   if (auto definingOp = value.getDefiningOp()) {
-    if(isa<memref::AllocOp>(definingOp)) {
+    if (isa<memref::AllocOp>(definingOp)) {
+      definingOp->dump();
       return false;
     }
   }
@@ -63,13 +84,13 @@ struct ConvertGpuLaunchToMetal
     target.addLegalDialect<MetalDialect>();
     target.addLegalDialect<gpu::GPUDialect>();
     target.addLegalDialect<tosa::TosaDialect>();
+    target.addLegalDialect<func::FuncDialect>();
 
     target.addLegalDialect<memref::MemRefDialect>();
     target.addLegalDialect<linalg::LinalgDialect>();
 
     target.addIllegalOp<gpu::LaunchFuncOp>();
 
-    
     target.addIllegalOp<memref::StoreOp>();
     target.addIllegalOp<memref::LoadOp>();
     target.addIllegalOp<memref::AllocOp>();
@@ -84,10 +105,15 @@ struct ConvertGpuLaunchToMetal
     target.addDynamicallyLegalOp<memref::StoreOp>(
         [](memref::StoreOp op) { return isLoadOrStoreOpValid(op); });
 
+    target.addDynamicallyLegalOp<func::FuncOp>(
+        [](func::FuncOp op) { return doesReturnMemrefFunc(op); });
+    target.addDynamicallyLegalOp<func::ReturnOp>(
+        [](func::ReturnOp op) { return doesReturnMemrefReturn(op); });
+
     RewritePatternSet patterns(&getContext());
     mlir::metal::populateGpuLaunchToMetalConversionPatterns(patterns,
                                                             &getContext());
-                                                            
+
     FrozenRewritePatternSet patternSet(std::move(patterns));
     if (failed(applyPartialConversion(getOperation(), target, patternSet)))
       signalPassFailure();
