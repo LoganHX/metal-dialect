@@ -13,9 +13,10 @@ mlir_opt=llvm-project/build/release/bin/mlir-opt
 metal_opt=build/debug/bin/metal-opt
 pop_translate=build/debug/tools/mlir-translate/pop-translate
 
-# ./$mlir_opt $start --pass-pipeline="builtin.module(func.func(tosa-to-linalg-named, \
-#                     tosa-to-linalg, tosa-to-arith{include-apply-rescale=1}, \
-#                     tosa-to-tensor, tosa-to-scf))" 1> $output
+./$mlir_opt $start --pass-pipeline="builtin.module(func.func(tosa-to-linalg-named, \
+                    tosa-to-arith{include-apply-rescale=1}, \
+                    tosa-to-tensor, tosa-to-scf))" 1> $output
+
 
 # ./$mlir_opt $output \
 #                     --canonicalize \
@@ -44,12 +45,12 @@ pop_translate=build/debug/tools/mlir-translate/pop-translate
 # ./$metal_opt $input   --arith-expand --convert-arith-to-emitc \
 #                       --convert-gpu-launch-func-to-metal --allow-unregistered-dialect  1> $middle
 
-./$metal_opt $middle  --lower-affine \
-                      --memref-expand \
-                      --convert-arith-to-emitc \
-                      --convert-memref-to-emitc 1> $output
+# ./$metal_opt $middle  --lower-affine \
+#                       --memref-expand \
+#                       --convert-arith-to-emitc \
+#                       --convert-memref-to-emitc 1> $output
 
-./$pop_translate $output --mlir-to-metal 1> $input 
+# ./$pop_translate $output --mlir-to-metal 1> $input 
 
 # Remove tmp files
 # rm $assembly_file

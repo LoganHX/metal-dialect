@@ -11,5 +11,4 @@ add_mlir_translation_library(MLIRTargetMetal
   MLIRFuncDialect
   MLIRIR
   MLIRSupport
-  MetalTranslateLib
   )

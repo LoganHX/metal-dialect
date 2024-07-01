@@ -17,7 +17,6 @@ target_link_libraries(pop-translate
   MLIRIR
   MLIRParser
   MLIRPass
-  MetalTranslateLib
   MLIRTargetMetal
   MLIRSupport
   )
