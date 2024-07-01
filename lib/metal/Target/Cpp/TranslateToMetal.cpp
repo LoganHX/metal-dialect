@@ -2201,8 +2201,6 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc,
     line += getOrCreateName(indices[i]).str() + " * (" + buffer + ")";
   }
 
-  std::cerr << line << "\n\n";
-
   return (os << StringRef(line), success());
 }
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
