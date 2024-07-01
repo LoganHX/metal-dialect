@@ -2187,7 +2187,7 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc,
                                             SmallVector<Value> sizes,
                                             SmallVector<Value> indices) {
 
-  // TODO check che sono delle stesse dimensioni size e indices
+  if(sizes.size() != indices.size()) return failure();
   std::string line = "";
   std::string buffer = "1";
 
