@@ -61,7 +61,7 @@ module {
       emitc.for %arg2 = %5 to %3 step %4 {
         emitc.for %arg3 = %5 to %3 step %4 {
           emitc.for %arg4 = %5 to %4 step %4 {
-            %114 = memref.load %arg0[%5, %arg2, %arg3, %5] : memref<1x28x28x1xf32, strided<[?, ?, ?, ?], offset: ?>>
+            %114 = memref.load %33[%5, %5, %5, %5] : memref<1x1x1x1xf32>
             %115 = memref.load %33[%5, %5, %5, %5] : memref<1x1x1x1xf32>
             %116 = emitc.mul %114, %115 : (f32, f32) -> f32
             metal.store %116, %40, %arg1, %arg2, %arg3, %arg4[%35, %36, %37, %38] : f32, index, index, index, index, index, i64, i64, i64, i64

@@ -25,12 +25,12 @@ func.func @main() {
   %c2 = arith.constant 10 : index
   %value = arith.constant 10.21 : f32
   
-  %A = memref.alloc() : memref<42x42xf32>
-  memref.store %value, %A[%step, %c1] : memref<42x42xf32>
-  %pollo = memref.load %A[%c1, %step] : memref<42x42xf32>
+  %A = memref.alloc() : memref<40x41x42xf32>
+  memref.store %value, %A[%step, %c1, %c2] : memref<40x41x42xf32>
+  %pollo = memref.load %A[%c1, %step, %c2] : memref<40x41x42xf32>
   
 
-  memref.dealloc %A : memref<42x42xf32>
+  memref.dealloc %A : memref<40x41x42xf32>
 
   return
 }

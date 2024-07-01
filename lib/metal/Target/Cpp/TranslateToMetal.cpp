@@ -202,11 +202,8 @@ struct MetalEmitter {
   LogicalResult emitLinearIndex(Location loc, int x, int y, int z,
                                 SmallVector<Value> indices);
 
-  LogicalResult emitLinearIndex(Location loc, StringRef x, StringRef y,
-                                StringRef z, StringRef xSize, StringRef ySize,
-                                StringRef zSize);
-
-  LogicalResult emitLinearIndex(Location loc, SmallVector<Value> sizes, SmallVector<Value> indices);
+  LogicalResult emitLinearIndex(Location loc, SmallVector<Value> sizes,
+                                SmallVector<Value> indices);
   /// Return the existing or a new name for a Value.
   StringRef getOrCreateName(Value val);
 
@@ -1117,25 +1114,6 @@ static LogicalResult getMemRefSize(MemRefType memrefType, int *x, int *y,
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::StoreOp storeOp) {
 
-  // MemRefType memrefType = cast<MemRefType>(storeOp.getMemref().getType());
-
-  // MetalEmitter::Scope scope(emitter);
-  // raw_indented_ostream &os = emitter.ostream();
-  // int width = 1;
-  // int length = 1;
-  // int heigth = 1;
-
-  // if (failed(getMemRefSize(memrefType, &width, &length, &heigth)))
-  //   return failure();
-  // os << "_MetalStore_";
-  // os << storeOp.getOperand(0).getType();
-  // os << "(";
-  // os << emitter.getOrCreateName(storeOp.getOperand(1));
-  // os << ", ";
-  // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth,
-  // storeOp.getIndices()); os << ", "; os <<
-  // emitter.getOrCreateName(storeOp.getOperand(0)); os << ")";
-
   MemRefType memrefType = cast<MemRefType>(storeOp.getMemref().getType());
 
   MetalEmitter::Scope scope(emitter);
@@ -1149,9 +1127,10 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
-  // if (failed(emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x", "gridDim.y",
+  // if (failed(emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x",
+  // "gridDim.y",
   //                                    "gridDim.z", storeOp.getIndices())))
-  //   ; TODO
+  //   return failure();
   // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth,
   //                         storeOp.getIndices());
   os << "]";
@@ -1349,14 +1328,12 @@ static LogicalResult printOperation(MetalEmitter &emitter, metal::StoreOp op) {
     return failure();
   os << "(";
   os << emitter.getOrCreateName(op.getBuffer());
-  for (mlir::Value index : op.getIndexes()) {
-    os << ", ";
-    os << emitter.getOrCreateName(index);
-  }
-  for (mlir::Value dim : op.getSizes()) {
-    os << ", ";
-    os << emitter.getOrCreateName(dim);
-  }
+  os << ", ";
+
+  if (failed(
+          emitter.emitLinearIndex(op.getLoc(), op.getSizes(), op.getIndexes())))
+    return failure();
+
   os << ", ";
   os << emitter.getOrCreateName(op.getValue());
 
@@ -1377,18 +1354,12 @@ static LogicalResult printOperation(MetalEmitter &emitter,
     return failure();
   os << "(";
   os << emitter.getOrCreateName(op.getBuffer());
-  
-  for (mlir::Value index : op.getIndexes()) {
-    os << ", ";
-    os << emitter.getOrCreateName(index);
-  }
-  for (mlir::Value dim : op.getSizes()) {
-    os << ", ";
-    os << emitter.getOrCreateName(dim);
-  }
+  os << ", ";
 
-  emitter.emitLinearIndex(op.getLoc(), op.getSizes(), op.getIndexes());
-  
+  if (failed(
+          emitter.emitLinearIndex(op.getLoc(), op.getSizes(), op.getIndexes())))
+    return failure();
+
   os << ")";
   return success();
 }
@@ -2212,24 +2183,27 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc, int xSize, int ySize,
           success());
 }
 
-LogicalResult MetalEmitter::emitLinearIndex(Location loc, StringRef x,
-                                            StringRef y, StringRef z,
-                                            StringRef xSize, StringRef ySize,
-                                            StringRef zSize) {
-  return (os << "(" << z << " * " << xSize << " * " << ySize << ") + (" << y
-             << " * " << xSize << ") + " << x,
-          success());
-}
-
-LogicalResult MetalEmitter::emitLinearIndex(Location loc, SmallVector<Value> sizes,
+LogicalResult MetalEmitter::emitLinearIndex(Location loc,
+                                            SmallVector<Value> sizes,
                                             SmallVector<Value> indices) {
-  
 
-  StringRef x = "0";
- 
+  // TODO check che sono delle stesse dimensioni size e indices
+  std::string line = "";
+  std::string buffer = "1";
 
-  return (os << x,
-          success());
+  int start = (int)sizes.size() - 1;
+
+  for (int i = start; i >= 0; i--) {
+    if (i != start) {
+      buffer += " * " + getOrCreateName(sizes[i + 1]).str();
+      line += " + ";
+    }
+    line += getOrCreateName(indices[i]).str() + " * (" + buffer + ")";
+  }
+
+  std::cerr << line << "\n\n";
+
+  return (os << StringRef(line), success());
 }
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
                                             bool declareVariablesAtTop) {
