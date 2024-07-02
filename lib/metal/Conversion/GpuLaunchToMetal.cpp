@@ -198,25 +198,6 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
     auto dimY = adaptor.getGridSizeY();
     auto dimZ = adaptor.getGridSizeZ();
 
-    // TODO sarebbe meglio modificare metal::CommandQueueMakeCommandBufferOp
-    //  in modo che accetti ConstantIndex come dimensioni X, Y e Z?
-
-    if (dimX.getType() != rewriter.getI64Type()) {
-      // servirebbe un check per vedere se dimX è un emit::ConstantOp
-      dimX = rewriter.create<emitc::CastOp>(op.getLoc(), rewriter.getI64Type(),
-                                            dimX);
-    }
-    if (dimY.getType() != rewriter.getI64Type()) {
-      // servirebbe un check per vedere se dimY è un emit::ConstantOp
-      dimY = rewriter.create<emitc::CastOp>(op.getLoc(), rewriter.getI64Type(),
-                                            dimY);
-    }
-    if (dimZ.getType() != rewriter.getI64Type()) {
-      // servirebbe un check per vedere se dimZ è un emit::ConstantOp
-      dimZ = rewriter.create<emitc::CastOp>(op.getLoc(), rewriter.getI64Type(),
-                                            dimZ);
-    }
-
     auto commandBuffer =
         rewriter.create<mlir::metal::CommandQueueMakeCommandBufferOp>(
             op.getLoc(), getQueue(rewriter, op.getLoc()),
@@ -288,7 +269,8 @@ struct ConvertFuncOp : public OpConversionPattern<func::FuncOp> {
     }
     std::vector<Type> return_types;
     return_types.push_back(rewriter.getIndexType());
-    auto newType = FunctionType::get(rewriter.getContext(), argument_types, return_types);
+    auto newType =
+        FunctionType::get(rewriter.getContext(), argument_types, return_types);
     rewriter.modifyOpInPlace(f, [&] { f.setFunctionType(newType); });
 
     return success();
@@ -307,7 +289,6 @@ struct ConvertReturnOp : public OpConversionPattern<func::ReturnOp> {
 
     rewriter.modifyOpInPlace(op,
                              [&] { op->setOperands(adaptor.getOperands()); });
-
 
     return success();
   }

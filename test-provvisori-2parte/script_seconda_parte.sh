@@ -13,19 +13,23 @@ mlir_opt=llvm-project/build/release/bin/mlir-opt
 metal_opt=build/debug/bin/metal-opt
 pop_translate=build/debug/tools/mlir-translate/pop-translate
 
-./$mlir_opt $start --pass-pipeline="builtin.module(func.func(tosa-to-linalg-named, \
+./$mlir_opt $start --pass-pipeline="builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,\
                     tosa-to-arith{include-apply-rescale=1}, \
                     tosa-to-tensor, tosa-to-scf))" 1> $output
+./$mlir_opt $output --linalg-specialize-generic-ops \
+                    --canonicalize \
+                    --cse \
+                    --convert-tensor-to-linalg  \
+                    --empty-tensor-to-alloc-tensor \
+                    --eliminate-empty-tensors \
+                    --one-shot-bufferize="bufferize-function-boundaries" \
+                    --finalizing-bufferize 1> $middle
+
 
 
 # ./$mlir_opt $output \
-#                     --canonicalize \
-#                     --cse \
-#                     --convert-tensor-to-linalg \
-#                     --empty-tensor-to-alloc-tensor \
-#                     --eliminate-empty-tensors \
-#                     --one-shot-bufferize="bufferize-function-boundaries" \
-#                     --finalizing-bufferize \
+#                     
+#                     
 #                     --convert-linalg-to-loops \
 #                     --arith-expand  \
 #                     --arith-unsigned-when-equivalent \

@@ -422,7 +422,7 @@ def BufferGetContentsOp : Metal_Op<"buffer_get_contents"> {
 def CommandQueueMakeCommandBufferOp : Metal_Op<"command_queue_make_command_buffer"> {
   let summary = "Command queue make command buffer operation";
 
-  let arguments = (ins Index:$commandQueue, I64:$dimX, I64:$dimY, I64:$dimZ,
+  let arguments = (ins Index:$commandQueue, Int_Type:$dimX, Int_Type:$dimY, Int_Type:$dimZ,
                        StrAttr:$functionName);
   let results = (outs Index);
 
