@@ -15,9 +15,16 @@ def ConvertMetalToLLVM : Pass<"convert-metal-to-llvm"> {
   let dependentDialects = ["LLVM::LLVMDialect"];
 }
 
+def ConvertFuncToFunc : Pass<"convert-func-to-func"> {
+  let summary = "Converts Func to Func";
+  let dependentDialects = ["mlir::metal::MetalDialect"];
+}
+
 def ConvertGpuLaunchToMetal : Pass<"convert-gpu-launch-func-to-metal"> {
   let summary = "Converts GPU Launch operations in operations of the metal dialect";
   let dependentDialects = ["mlir::metal::MetalDialect"];
 }
+
+
 
 #endif // METAL_PASSES_TD

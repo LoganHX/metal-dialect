@@ -1,10 +1,9 @@
-//===--- GpuLaunchlToMetal.h ------------------------------------------*- C++ -*-===//
+//===--- FuncToFunc.h ------------------------------------------*- C++ -*-===//
 //
 // This source file is part of the metal-dialect open source project
 // See LICENSE.txt for license information
 //
 //===----------------------------------------------------------------------===//
-
 
 #pragma once
 
@@ -18,7 +17,8 @@ class RewritePatternSet;
 class Pass;
 
 namespace metal {
-void populateGpuLaunchToMetalConversionPatterns(RewritePatternSet &patterns,
+void populateFuncToFuncConversionPatterns(RewritePatternSet &patterns,
                                            MLIRContext *ctx);
 } // end namespace metal
 } // end namespace mlir
+
