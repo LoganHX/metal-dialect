@@ -9,7 +9,7 @@ add_mlir_dialect_library(MLIRMetal
 		${LIB_HEADERS}/Conversion/MetalToLLVM.h
 		Conversion/ConvertMetalToLLVM.cpp
 		Conversion/MetalToLLVM.cpp
-
+		
 		${LIB_HEADERS}/Conversion/MetalPasses.h
 		${LIB_HEADERS}/Conversion/FuncToFunc.h
 		Conversion/ConvertFuncToFunc.cpp
@@ -19,6 +19,11 @@ add_mlir_dialect_library(MLIRMetal
 		${LIB_HEADERS}/Conversion/GpuLaunchToMetal.h
 		Conversion/ConvertGpuLaunchToMetal.cpp
 		Conversion/GpuLaunchToMetal.cpp
+
+		${LIB_HEADERS}/Conversion/MetalPasses.h
+		${LIB_HEADERS}/Conversion/LinalgToMetal.h
+		Conversion/ConvertLinalgToMetal.cpp
+		Conversion/LinalgToMetal.cpp
 
 		# IR
 		${LIB_HEADERS}/IR/MetalDialect.h

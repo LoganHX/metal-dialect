@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "metal/Conversion/FuncToFunc.h"
+#include "metal/IR/MetalOps.h"
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -20,7 +21,6 @@
 #include "mlir/IR/IntegerSet.h"
 #include "mlir/IR/Types.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "metal/IR/MetalOps.h"
 
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
@@ -41,16 +41,12 @@ struct ConvertFuncOp : public OpConversionPattern<func::FuncOp> {
   LogicalResult
   matchAndRewrite(func::FuncOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    
-    auto loc = op.getLoc();
 
-      rewriter.modifyOpInPlace(op, [&] {
+    rewriter.modifyOpInPlace(op, [&] {
       rewriter.setInsertionPointToStart(&op.getBody().front());
-      auto deviceOp = rewriter.create<mlir::metal::DeviceMakeDefaultOp>(op.getLoc());
-      auto queueOp = rewriter.create<mlir::metal::DeviceMakeCommandQueueOp>(op.getLoc(), deviceOp);
+      auto dev = rewriter.create<mlir::metal::DeviceMakeDefaultOp>(op.getLoc());
+      rewriter.create<mlir::metal::DeviceMakeCommandQueueOp>(op.getLoc(), dev);
     });
-               
-
 
     return success();
   }

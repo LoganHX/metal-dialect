@@ -1,3 +1,10 @@
+//===--- ConvertGpuLaunchToMetal.cpp--------------------------------------------===//
+//
+// This source file is part of the metal-dialect open source project
+// See LICENSE.txt for license information
+//
+//===----------------------------------------------------------------------===//
+
 #include "metal/Conversion/GpuLaunchToMetal.h"
 #include "metal/Conversion/MetalPasses.h"
 #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
@@ -89,7 +96,6 @@ struct ConvertGpuLaunchToMetal
     target.addLegalDialect<gpu::GPUDialect>();
     target.addLegalDialect<tosa::TosaDialect>();
     target.addLegalDialect<func::FuncDialect>();
-
     target.addLegalDialect<memref::MemRefDialect>();
     target.addLegalDialect<linalg::LinalgDialect>();
 
@@ -99,8 +105,6 @@ struct ConvertGpuLaunchToMetal
     target.addIllegalOp<memref::LoadOp>();
     target.addIllegalOp<memref::AllocOp>();
     target.addIllegalOp<memref::DeallocOp>();
-
-    target.addIllegalOp<linalg::MatmulOp>();
 
     target.addLegalDialect<bufferization::BufferizationDialect>();
 

@@ -22,10 +22,13 @@ def ConvertFuncToFunc : Pass<"convert-func-to-func"> {
 
 def ConvertGpuLaunchToMetal : Pass<"convert-gpu-launch-func-to-metal"> {
   let summary = "Converts GPU Launch operations in operations of the metal dialect";
-  let dependentDialects = ["mlir::metal::MetalDialect"];
+  let dependentDialects = ["mlir::metal::MetalDialect", "mlir::emitc::EmitCDialect"];
 }
 
-
+def ConvertLinalgToMetal : Pass<"convert-linalg-to-metal"> {
+  let summary = "Converts GPU Launch operations in operations of the metal dialect";
+  let dependentDialects = ["mlir::emitc::EmitCDialect", "mlir::metal::MetalDialect" ];
+}
 
 
 
