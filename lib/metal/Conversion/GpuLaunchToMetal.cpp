@@ -31,19 +31,55 @@
 namespace {
 
 using namespace mlir;
-
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
-bool shouldMapToUnsigned(IntegerType::SignednessSemantics val) {
-  switch (val) {
-  case IntegerType::Signless:
-    return false;
-  case IntegerType::Signed:
-    return false;
-  case IntegerType::Unsigned:
-    return true;
+
+void retrieveDeviceAndQueue(Operation *op) {
+  //TODO sarebbe meglio se restituisse qualcosa di informativo
+  auto parent = op->getParentOp();
+  while (parent) {
+    if (auto funcOp = dyn_cast<func::FuncOp>(parent)) {
+      auto &body = funcOp.getBody();
+      if (body.empty())
+        return;
+      auto &firstBlock = body.front();
+      if (firstBlock.empty())
+        return;
+
+      auto *firstOp = &firstBlock.front();
+      if (isa<metal::DeviceMakeDefaultOp>(firstOp)) {
+        device = dyn_cast<mlir::metal::DeviceMakeDefaultOp>(*firstOp);
+      }
+      if (firstOp->getNextNode()) {
+        auto *secondOp = firstOp->getNextNode();
+        if (isa<metal::DeviceMakeCommandQueueOp>(secondOp))
+          queue = dyn_cast<mlir::metal::DeviceMakeCommandQueueOp>(*secondOp);
+        return;
+      }
+    }
+    parent = parent->getParentOp();
   }
+  return;
+};
+
+mlir::metal::DeviceMakeDefaultOp getDevice(Operation *op) {
+  if (device) {
+    device.dump();
+    return device;
+  }
+  retrieveDeviceAndQueue(op);
+  device.dump();
+
+  return device;
 }
+
+mlir::metal::DeviceMakeCommandQueueOp getQueue(Operation *op) {
+  if (queue)
+    return queue;
+  retrieveDeviceAndQueue(op);
+  return queue;
+}
+
 
 SmallVector<Value, 4> getMemrefDims(Operation *op,
                                     ConversionPatternRewriter &rewriter,
@@ -57,22 +93,6 @@ SmallVector<Value, 4> getMemrefDims(Operation *op,
   return dims;
 }
 
-mlir::metal::DeviceMakeDefaultOp getDevice(ConversionPatternRewriter &rewriter,
-                                           mlir::Location loc) {
-  if (device)
-    return device;
-  device = rewriter.create<mlir::metal::DeviceMakeDefaultOp>(loc);
-  return device;
-}
-
-mlir::metal::DeviceMakeCommandQueueOp
-getQueue(ConversionPatternRewriter &rewriter, mlir::Location loc) {
-  if (queue)
-    return queue;
-  queue = rewriter.create<mlir::metal::DeviceMakeCommandQueueOp>(
-      loc, getDevice(rewriter, loc));
-  return queue;
-}
 
 struct ConvertDeallocOp : public OpConversionPattern<memref::DeallocOp> {
   ConvertDeallocOp(mlir::MLIRContext *context)
@@ -175,7 +195,7 @@ struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
         getMemrefDims(op.getOperation(), rewriter, op.getMemref().getType(),
                       rewriter.getI64Type());
     auto rep = rewriter.create<mlir::metal::DeviceMakeBufferOp>(
-        op.getLoc(), getDevice(rewriter, op.getLoc()), boolValue, dims,
+        op.getLoc(), getDevice(op), boolValue, dims,
         op.getMemref().getType().getElementType());
 
     rewriter.replaceOp(op, rep);
@@ -200,7 +220,7 @@ struct ConvertLaunchFuncOp : public OpConversionPattern<gpu::LaunchFuncOp> {
 
     auto commandBuffer =
         rewriter.create<mlir::metal::CommandQueueMakeCommandBufferOp>(
-            op.getLoc(), getQueue(rewriter, op.getLoc()),
+            op.getLoc(), getQueue(op),
             op.getKernelModuleName(), dimX, dimY, dimZ);
 
     for (size_t i = 0; i < adaptor.getKernelOperands().size(); i++) {
@@ -239,7 +259,7 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
         rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
 
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
-        op.getLoc(), rewriter.getIndexType(), getQueue(rewriter, op.getLoc()),
+        op.getLoc(), rewriter.getIndexType(), getQueue(op),
         adaptor.getOperands()[0],
         adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
@@ -254,8 +274,8 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
   }
 };
 
-struct ConvertFuncOp : public OpConversionPattern<func::FuncOp> {
-  ConvertFuncOp(mlir::MLIRContext *context)
+struct LegalizeFuncOp : public OpConversionPattern<func::FuncOp> {
+  LegalizeFuncOp(mlir::MLIRContext *context)
       : OpConversionPattern<func::FuncOp>(context) {}
 
   using OpConversionPattern::OpConversionPattern;
@@ -277,8 +297,8 @@ struct ConvertFuncOp : public OpConversionPattern<func::FuncOp> {
   }
 };
 
-struct ConvertReturnOp : public OpConversionPattern<func::ReturnOp> {
-  ConvertReturnOp(mlir::MLIRContext *context)
+struct LegalizeReturnOp : public OpConversionPattern<func::ReturnOp> {
+  LegalizeReturnOp(mlir::MLIRContext *context)
       : OpConversionPattern<func::ReturnOp>(context) {}
 
   using OpConversionPattern::OpConversionPattern;
@@ -301,5 +321,5 @@ void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
 
   patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
                   ConvertDeallocOp, ConvertLoadOp, ConvertMatmulOp,
-                  ConvertReturnOp, ConvertFuncOp>(ctx);
+                  LegalizeReturnOp, LegalizeFuncOp>(ctx);
 }
