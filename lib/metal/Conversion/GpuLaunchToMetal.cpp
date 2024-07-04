@@ -271,6 +271,36 @@ struct LegalizeReturnOp : public OpConversionPattern<func::ReturnOp> {
   }
 };
 
+struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
+  LegalizeMatmulOp(mlir::MLIRContext *context)
+      : OpConversionPattern<metal::MatmulOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(metal::MatmulOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    
+
+    llvm::errs() << "Adaptor Operands:\n";
+    for (auto operand : adaptor.getOperands()) {
+      operand.dump();
+    }
+    auto rep = rewriter.create<mlir::metal::MatmulOp>(
+        op.getLoc(), getQueue(op),
+        adaptor.getOperands()[0],
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[1],
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[2], nullptr );
+    rewriter.replaceOp(op, rep);
+
+    return success();
+  }
+};
+
 } // end namespace
 
 void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
@@ -278,5 +308,5 @@ void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
 
   patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
                   ConvertDeallocOp, ConvertLoadOp,
-                  LegalizeReturnOp, LegalizeFuncOp>(ctx);
+                  LegalizeReturnOp, LegalizeFuncOp, LegalizeMatmulOp>(ctx);
 }

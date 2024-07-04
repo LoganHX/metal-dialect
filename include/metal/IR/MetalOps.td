@@ -123,19 +123,20 @@ def ReturnOp : Metal_Op<"return", [Pure, Terminator]> {
 // MatmulOp
 //===----------------------------------------------------------------------===//
 
-def MatmulOp : Metal_Op<"matmul"> {
+def MatmulOp : Metal_Op<"matmul", [AttrSizedOperandSegments]> {
   let summary = "Matrix multiplication operation";
 
-  let arguments = (ins Int_Type:$queue, Int_Type:$bufferA, Int_Type:$rowsA, Int_Type:$columnsA, 
-                                        Int_Type:$bufferB, Int_Type:$rowsB, Int_Type:$columnsB,
-                                        Int_Type:$bufferC,
-                                        Int_Type:$elementSize);
-  let results = (outs Index);
+  let arguments = (ins Optional<Index>:$queue, 
+                      AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA, 
+                      AnyType:$bufferB, Optional<Int_Type>:$rowsB, Optional<Int_Type>:$columnsB,
+                      AnyType:$bufferC,
+                      Optional<Int_Type>:$elementSize);
+  
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  let assemblyFormat = "$queue `,` $bufferA `<` $rowsA `:`$columnsA `>` $bufferB `<` $rowsB `:`$columnsB `>` $bufferC `,` $elementSize attr-dict `:` type(operands)";
-  //let assemblyFormat = "$queue `,` $bufferA `,`  $bufferB `,` $bufferC `,` $elementSize attr-dict `:` type(operands)";
+  // Aggiungi type($result) per specificare il tipo del risultato
+  //let assemblyFormat = "$queue `,` $bufferA `<` $rowsA `:`$columnsA `>` $bufferB `<` $rowsB `:`$columnsB `>` $bufferC `,` $elementSize attr-dict `:` type(operands) ";
 
 }
 

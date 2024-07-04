@@ -44,13 +44,7 @@ struct ConvertLinalgToMetal
     target.addLegalDialect<memref::MemRefDialect>();
     target.addLegalDialect<linalg::LinalgDialect>();
 
-    target.addIllegalOp<gpu::LaunchFuncOp>();
-
-    target.addIllegalOp<memref::StoreOp>();
-    target.addIllegalOp<memref::LoadOp>();
-    target.addIllegalOp<memref::AllocOp>();
-    target.addIllegalOp<memref::DeallocOp>();
-
+    target.addIllegalOp<linalg::MatmulOp>();
    
     RewritePatternSet patterns(&getContext());
     mlir::metal::populateLinalgToMetalConversionPatterns(patterns,

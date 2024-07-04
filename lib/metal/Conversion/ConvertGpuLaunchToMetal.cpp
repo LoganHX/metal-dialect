@@ -117,6 +117,8 @@ struct ConvertGpuLaunchToMetal
         [](func::FuncOp op) { return doesReturnMemrefFunc(op); });
     target.addDynamicallyLegalOp<func::ReturnOp>(
         [](func::ReturnOp op) { return doesReturnMemrefReturn(op); });
+    target.addDynamicallyLegalOp<metal::MatmulOp>(
+        [](metal::MatmulOp op) { return !(op.getQueue() == nullptr); });
 
     RewritePatternSet patterns(&getContext());
     mlir::metal::populateGpuLaunchToMetalConversionPatterns(patterns,
