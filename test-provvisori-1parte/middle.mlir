@@ -14,7 +14,8 @@ module {
     %11 = "emitc.constant"() <{value = 10 : i64}> : () -> i64
     %12 = "emitc.constant"() <{value = 10 : i64}> : () -> i64
     %13 = metal.device_make_buffer %0, %10, %11, %12 x i32 : (index, i1, i64, i64) -> index
-    "metal.matmul"(%1, %5, %3, %4, %9, %7, %8, %13) <{operandSegmentSizes = array<i32: 1, 1, 1, 1, 1, 1, 1, 1, 0>}> : (index, index, i64, i64, index, i64, i64, index) -> ()
+    %14 = "emitc.constant"() <{value = 32 : ui32}> : () -> ui32
+    "metal.matmul"(%1, %5, %3, %4, %9, %7, %8, %13, %14) <{operandSegmentSizes = array<i32: 1, 1, 1, 1, 1, 1, 1, 1, 1>}> : (index, index, i64, i64, index, i64, i64, index, ui32) -> ()
     return
   }
 }

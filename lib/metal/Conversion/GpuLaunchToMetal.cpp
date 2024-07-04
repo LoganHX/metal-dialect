@@ -281,6 +281,9 @@ struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
   matchAndRewrite(metal::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     
+     auto intValue = rewriter.create<emitc::ConstantOp>(
+        op.getLoc(), rewriter.getIntegerType(32, false),
+        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
 
     llvm::errs() << "Adaptor Operands:\n";
     for (auto operand : adaptor.getOperands()) {
@@ -294,7 +297,7 @@ struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
         adaptor.getOperands()[1],
         adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
-        adaptor.getOperands()[2], nullptr );
+        adaptor.getOperands()[2], intValue);
     rewriter.replaceOp(op, rep);
 
     return success();
