@@ -199,8 +199,8 @@ struct MetalEmitter {
 
   LogicalResult emitTypeSize(Location loc, Type type);
 
-  LogicalResult emitLinearIndex(Location loc, int x, int y, int z,
-                                SmallVector<Value> indices);
+  LogicalResult emitLinearIndexRefs(Location loc, SmallVector<StringRef> sizes,
+                                    SmallVector<Value> indices);
 
   LogicalResult emitLinearIndex(Location loc, SmallVector<Value> sizes,
                                 SmallVector<Value> indices);
@@ -1118,21 +1118,24 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  int width = 1;
-  int length = 1;
-  int heigth = 1;
+  // int width = 1;
+  // int length = 1;
+  // int heigth = 1;
 
-  if (failed(getMemRefSize(memrefType, &width, &length, &heigth)))
-    return failure();
+  // if (failed(getMemRefSize(memrefType, &width, &length, &heigth)))
+  //   return failure();
 
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
-  // if (failed(emitter.emitLinearIndex(storeOp.getLoc(), "gridDim.x",
-  // "gridDim.y",
-  //                                    "gridDim.z", storeOp.getIndices())))
+
+  SmallVector<StringRef> stringRefs;
+  stringRefs[0] = StringRef("gridDim.x");
+  stringRefs[1] = StringRef("gridDim.y");
+  stringRefs[2] = StringRef("gridDim.z");
+
+  // if (failed(emitter.emitLinearIndexRefs(storeOp.getLoc(), stringRefs,
+  // storeOp.getIndices())))
   //   return failure();
-  // emitter.emitLinearIndex(storeOp.getLoc(), width, length, heigth,
-  //                         storeOp.getIndices());
   os << "]";
   os << " = ";
   os << emitter.getOrCreateName(storeOp.getOperand(0));
@@ -1160,9 +1163,9 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   raw_indented_ostream &os = emitter.ostream();
 
   os << "[";
-  if (failed(emitter.emitLinearIndex(loadOp.getLoc(), width, length, heigth,
-                                     loadOp.getIndices())))
-    return failure();
+  // if (failed(emitter.emitLinearIndex(loadOp.getLoc(), width, length, heigth,
+  //                                    loadOp.getIndices())))
+  //   return failure();
   os << "]";
   return success();
 }
@@ -1260,9 +1263,13 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << emitter.getOrCreateName(op.getDevice());
   os << ", ";
   os << emitter.getOrCreateName(op.getIsStorageModeManaged());
+  os << ", ";
 
-  for (mlir::Value dim : op.getDims()) {
-    os << ", ";
+  for (int i = 0; i < (int)op.getDims().size(); i++) {
+    if (i > 0) {
+      os << " * ";
+    }
+    mlir::Value dim = op.getDims()[i];
     os << emitter.getOrCreateName(dim);
   }
 
@@ -2155,39 +2162,43 @@ LogicalResult MetalEmitter::emitTypeSize(Location loc, Type type) {
   return emitError(loc, "cannot emit type size") << type;
 }
 
-LogicalResult MetalEmitter::emitLinearIndex(Location loc, int xSize, int ySize,
-                                            int zSize,
-                                            SmallVector<Value> indices) {
-  if (indices.size() > 3)
-    return failure();
-  if (indices.size() <= 0)
-    return failure();
+// LogicalResult MetalEmitter::emitLinearIndex(Location loc, SmallVector<int> ,
+//                                             SmallVector<Value> indices) {
+//   if (sizes.size() != indices.size())
+//     return failure();
 
-  StringRef x = "0";
-  StringRef y = "0";
-  StringRef z = "0";
+//   SmallVector<StringRef> stringRefs;
 
-  if (indices.size() == 3) {
-    z = getOrCreateName(indices[2]);
-  }
-  if (indices.size() >= 2) {
-    y = getOrCreateName(indices[1]);
-  }
-  if (indices.size() >= 1) {
-    x = getOrCreateName(indices[0]);
-  }
-  // return (z * xSize * ySize) + (y * xSize) + x;
+//   for (int i = (int)sizes.size() - 1; i >= 0; i--) {
+//     stringRefs[i] = getOrCreateName(sizes[i]);
+//   }
 
-  return (os << "(" << z << " * " << xSize << " * " << ySize << ") + (" << y
-             << " * " << xSize << ") + " << x,
-          success());
-}
+//   return emitLinearIndex(loc, stringRefs, indices);
+// }
 
 LogicalResult MetalEmitter::emitLinearIndex(Location loc,
                                             SmallVector<Value> sizes,
                                             SmallVector<Value> indices) {
+  if (sizes.size() != indices.size())
+    return failure();
+  
+  SmallVector<StringRef> stringRefs;
+  stringRefs.reserve(sizes.size());
 
-  if(sizes.size() != indices.size()) return failure();
+  for (int i = 0; i < (int) sizes.size(); i++) {
+    stringRefs.push_back(getOrCreateName(sizes[i]));
+  }
+
+  return emitLinearIndexRefs(loc, stringRefs, indices);
+}
+
+
+LogicalResult MetalEmitter::emitLinearIndexRefs(Location loc,
+                                                SmallVector<StringRef> sizes,
+                                                SmallVector<Value> indices) {
+
+  if (sizes.size() != indices.size())
+    return failure();
   std::string line = "";
   std::string buffer = "1";
 
@@ -2195,7 +2206,7 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc,
 
   for (int i = start; i >= 0; i--) {
     if (i != start) {
-      buffer += " * " + getOrCreateName(sizes[i + 1]).str();
+      buffer += " * " + sizes[i + 1].str();
       line += " + ";
     }
     line += getOrCreateName(indices[i]).str() + " * (" + buffer + ")";
@@ -2203,6 +2214,7 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc,
 
   return (os << StringRef(line), success());
 }
+
 LogicalResult mlir::metal::translateToMetal(Operation *op, raw_ostream &os,
                                             bool declareVariablesAtTop) {
   MetalEmitter emitter(os, declareVariablesAtTop);

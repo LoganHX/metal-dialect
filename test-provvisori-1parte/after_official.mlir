@@ -1,9 +1,11 @@
 module {
   func.func @main() {
-    %alloc = memref.alloc() : memref<10x10xi32>
-    %alloc_0 = memref.alloc() : memref<10x10xi32>
-    %alloc_1 = memref.alloc() : memref<10x10xi32>
-    linalg.matmul ins(%alloc, %alloc_0 : memref<10x10xi32>, memref<10x10xi32>) outs(%alloc_1 : memref<10x10xi32>)
+    %0 = "emitc.constant"() <{value = 1 : index}> : () -> index
+    %1 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
+    %alloc = memref.alloc() : memref<40x41x42xf32>
+    memref.store %1, %alloc[%0, %0, %0] : memref<40x41x42xf32>
+    %2 = memref.load %alloc[%0, %0, %0] : memref<40x41x42xf32>
+    memref.dealloc %alloc : memref<40x41x42xf32>
     return
   }
 }
