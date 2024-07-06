@@ -1,28 +1,30 @@
-void main() {
-  intptr_t v1;
-  v1 = _MetalDeviceMakeDefault();
+void main(float* v1) {
   intptr_t v2;
-  v2 = _MetalDeviceMakeCommandQueue(v1);
-  size_t v3 = 1;
-  size_t v4 = 0;
-  size_t v5 = 10;
-  float v6 = 1.021000000e+01f;
-  bool v7 = false;
-  int64_t v8 = 10;
-  int64_t v9 = 10;
-  intptr_t v10;
-  v10 = _MetalDeviceMakeBuffer(v1, v7, v8 * v9);
-  size_t v11 = 1;
-  size_t v12 = 10;
-  size_t v13 = 10;
-  intptr_t v14;
-  v14 = _MetalCommandQueueMakeCommandBufferWithDefaultLibrary(v2, v12, v13, v11, (int8_t *)"main_kernel");
-  int64_t v15 = 0;
-  _MetalCommandBufferAddBuffer(v14, v10, v15);
-  _MetalCommandBufferCommit(v14);
-  _MetalCommandBufferWaitUntilCompleted(v14);
-  _MetalRelease(v14);
-  _MetalRelease(v10);
+  v2 = _MetalDeviceMakeDefault();
+  intptr_t v3;
+  v3 = _MetalDeviceMakeCommandQueue(v2);
+  size_t v4 = 1;
+  size_t v5 = 0;
+  size_t v6 = 10;
+  float v7 = 1.021000000e+01f;
+  float v8;
+  v8 = [v5 * (1) + v5 * (1 * 10)];
+  bool v9 = false;
+  int64_t v10 = 10;
+  int64_t v11 = 10;
+  intptr_t v12;
+  v12 = _MetalDeviceMakeBuffer(v2, v9, v10 * v11);
+  size_t v13 = 1;
+  size_t v14 = 10;
+  size_t v15 = 10;
+  intptr_t v16;
+  v16 = _MetalCommandQueueMakeCommandBufferWithDefaultLibrary(v3, v14, v15, v13, (int8_t *)"main_kernel");
+  int64_t v17 = 0;
+  _MetalCommandBufferAddBuffer(v16, v12, v17);
+  _MetalCommandBufferCommit(v16);
+  _MetalCommandBufferWaitUntilCompleted(v16);
+  _MetalRelease(v16);
+  _MetalRelease(v12);
   return;
 }
 

@@ -135,7 +135,7 @@ struct MetalEmitter {
   LogicalResult emitOperation(Operation &op, bool trailingSemicolon);
 
   /// Emits type 'type' or returns failure.
-  LogicalResult emitType(Location loc, Type type);
+  LogicalResult emitType(Location loc, Type type, bool isGPUSide = false);
 
   /// Emits array of types as a std::tuple of the emitted types.
   /// - emits void for an empty array;
@@ -156,7 +156,7 @@ struct MetalEmitter {
 
   /// Emits a declaration of a variable with the given type and name.
   LogicalResult emitVariableDeclaration(Location loc, Type type,
-                                        StringRef name);
+                                        StringRef name, bool isGPUSide = false);
   /// Emits a declaration of a variable with the given type and name.
   LogicalResult emitKnownTypeVariableDeclaration(Location loc, StringRef type,
                                                  StringRef name,
@@ -961,12 +961,12 @@ static LogicalResult printFunctionArgs(MetalEmitter &emitter,
 
 static LogicalResult printFunctionArgs(MetalEmitter &emitter,
                                        Operation *functionOp,
-                                       Region::BlockArgListType arguments) {
+                                       Region::BlockArgListType arguments, bool isGPUSide = false) {
   raw_indented_ostream &os = emitter.ostream();
   return (interleaveCommaWithError(
       arguments, os, [&](BlockArgument arg) -> LogicalResult {
         return emitter.emitVariableDeclaration(
-            functionOp->getLoc(), arg.getType(), emitter.getOrCreateName(arg));
+            functionOp->getLoc(), arg.getType(), emitter.getOrCreateName(arg), isGPUSide);
       }));
 }
 
@@ -1444,7 +1444,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   os << "(";
   Operation *operation = functionOp.getOperation();
-  if (failed(printFunctionArgs(emitter, operation, functionOp.getArguments())))
+  if (failed(printFunctionArgs(emitter, operation, functionOp.getArguments(), true)))
     return failure();
   if (failed(printKernelSizeVariables(emitter)))
     return failure();
@@ -2017,9 +2017,9 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
 }
 
 LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
-                                                    StringRef name) {
+                                                    StringRef name, bool isGPUSide) {
   if (auto arrType = dyn_cast<emitc::ArrayType>(type)) {
-    if (failed(emitType(loc, arrType.getElementType())))
+    if (failed(emitType(loc, arrType.getElementType(), isGPUSide)))
       return failure();
     os << " " << name;
     for (auto dim : arrType.getShape()) {
@@ -2027,7 +2027,7 @@ LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
     }
     return success();
   }
-  if (failed(emitType(loc, type)))
+  if (failed(emitType(loc, type, isGPUSide)))
     return failure();
   os << " " << name;
   return success();
@@ -2041,10 +2041,9 @@ LogicalResult MetalEmitter::emitKnownTypeVariableDeclaration(
   return success();
 }
 
-LogicalResult MetalEmitter::emitType(Location loc, Type type) {
+LogicalResult MetalEmitter::emitType(Location loc, Type type, bool isGPUSide) {
   if (auto memrefType = dyn_cast<MemRefType>(type)) {
-    // Qua dentro dovrebbe entrarci solo lato kernel
-    os << "device ";
+    if(isGPUSide) os << "device ";
     if (failed(emitType(loc, memrefType.getElementType())))
       return failure();
     os << "*";

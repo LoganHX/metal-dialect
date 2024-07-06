@@ -24,16 +24,6 @@ namespace mlir::metal {
 #define GEN_PASS_DEF_CONVERTGPULAUNCHTOMETAL
 #include "metal/Conversion/MetalPasses.h.inc"
 
-bool isInsideGpuSpace(Operation *op) {
-  auto parent = op->getParentOp();
-  while (parent) {
-    if (isa<gpu::GPUFuncOp>(parent) || isa<gpu::GPUModuleOp>(parent)) {
-      return true;
-    }
-    parent = parent->getParentOp();
-  }
-  return false;
-};
 
 bool doesReturnMemrefFunc(Operation *op) {
   //TODO controlla solo il primo return value, andrebbe estesa per controllare per tutti
