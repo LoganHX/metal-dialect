@@ -200,7 +200,7 @@ struct MetalEmitter {
   LogicalResult emitTypeSize(Location loc, Type type);
 
   LogicalResult emitLinearIndexRefs(Location loc, SmallVector<StringRef> sizes,
-                                    SmallVector<Value> indices);
+                                    SmallVector<Value> indices, bool preload);
 
   LogicalResult emitLinearIndex(Location loc, SmallVector<Value> sizes,
                                 SmallVector<Value> indices);
@@ -1113,32 +1113,25 @@ static LogicalResult getMemRefSize(MemRefType memrefType, int *x, int *y,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::StoreOp storeOp) {
-
-  MemRefType memrefType = cast<MemRefType>(storeOp.getMemref().getType());
-
+  // Crea uno scope per l'emissione del codice
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  // int width = 1;
-  // int length = 1;
-  // int heigth = 1;
-
-  // if (failed(getMemRefSize(memrefType, &width, &length, &heigth)))
-  //   return failure();
 
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
 
-  SmallVector<StringRef> stringRefs;
-  stringRefs[0] = StringRef("gridDim.x");
-  stringRefs[1] = StringRef("gridDim.y");
-  stringRefs[2] = StringRef("gridDim.z");
+  SmallVector<StringRef, 3> stringRefs;
 
-  // if (failed(emitter.emitLinearIndexRefs(storeOp.getLoc(), stringRefs,
-  // storeOp.getIndices())))
-  //   return failure();
+  // Emmette i riferimenti agli indici lineari
+  if (failed(emitter.emitLinearIndexRefs(storeOp.getLoc(), stringRefs,
+                                         storeOp.getIndices(), false)))
+    return failure();
+
   os << "]";
   os << " = ";
+  // Emmette il nome del primo operando (sorgente del memref store)
   os << emitter.getOrCreateName(storeOp.getOperand(0));
+
   return success();
 }
 
@@ -1156,16 +1149,17 @@ static LogicalResult printOperation(MetalEmitter &emitter,
     return failure();
   if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
     return failure();
-  // TODO bisogna dichiarare/assegnare le variabili prima di MetalEmitter::Scope
-  // e/o raw_indented_ostream
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
   os << "[";
-  // if (failed(emitter.emitLinearIndex(loadOp.getLoc(), width, length, heigth,
-  //                                    loadOp.getIndices())))
-  //   return failure();
+  SmallVector<StringRef, 3> stringRefs;
+
+  // Emmette i riferimenti agli indici lineari
+  if (failed(emitter.emitLinearIndexRefs(loadOp.getLoc(), stringRefs,
+                                         loadOp.getIndices(), false)))
+    return failure();
   os << "]";
   return success();
 }
@@ -2181,32 +2175,38 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc,
                                             SmallVector<Value> indices) {
   if (sizes.size() != indices.size())
     return failure();
-  
+
   SmallVector<StringRef> stringRefs;
   stringRefs.reserve(sizes.size());
 
-  for (int i = 0; i < (int) sizes.size(); i++) {
+  for (int i = 0; i < (int)sizes.size(); i++) {
     stringRefs.push_back(getOrCreateName(sizes[i]));
   }
 
-  return emitLinearIndexRefs(loc, stringRefs, indices);
+  return emitLinearIndexRefs(loc, stringRefs, indices, true);
 }
 
+LogicalResult
+MetalEmitter::emitLinearIndexRefs(Location loc,
+                                  SmallVector<StringRef> stringRefs,
+                                  SmallVector<Value> indices, bool preload) {
+  if (!preload) {
+    stringRefs.push_back(StringRef("1"));
+    stringRefs.push_back(StringRef("gridDim.y"));
+    stringRefs.push_back(StringRef("gridDim.z"));
+  }
 
-LogicalResult MetalEmitter::emitLinearIndexRefs(Location loc,
-                                                SmallVector<StringRef> sizes,
-                                                SmallVector<Value> indices) {
-
-  if (sizes.size() != indices.size())
+  if (indices.size() > stringRefs.size())
     return failure();
+
   std::string line = "";
   std::string buffer = "1";
 
-  int start = (int)sizes.size() - 1;
+  int start = (int)indices.size() - 1;
 
   for (int i = start; i >= 0; i--) {
     if (i != start) {
-      buffer += " * " + sizes[i + 1].str();
+      buffer += " * " + stringRefs[i + 1].str();
       line += " + ";
     }
     line += getOrCreateName(indices[i]).str() + " * (" + buffer + ")";
