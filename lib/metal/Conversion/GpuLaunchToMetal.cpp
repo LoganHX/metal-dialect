@@ -285,10 +285,10 @@ struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
         op.getLoc(), rewriter.getIntegerType(32, false),
         rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
 
-    llvm::errs() << "Adaptor Operands:\n";
-    for (auto operand : adaptor.getOperands()) {
-      operand.dump();
-    }
+    // llvm::errs() << "Adaptor Operands:\n";
+    // for (auto operand : adaptor.getOperands()) {
+    //   operand.dump();
+    // }
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
         op.getLoc(), getQueue(op),
         adaptor.getOperands()[0],

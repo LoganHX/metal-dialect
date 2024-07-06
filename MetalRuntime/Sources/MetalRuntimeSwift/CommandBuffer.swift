@@ -40,8 +40,6 @@ public class CommandBuffer: Wrappable {
   @objc
   public func commit() {
       if(nil == gridSize && nil == computeEncoder && nil == threads && buffers?.isEmpty == true){
-          // MPSMatrixMultiplication
-          //return simpleCommit();
           self.commandBuffer.commit();
           return
       }

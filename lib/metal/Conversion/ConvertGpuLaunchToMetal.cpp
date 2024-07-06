@@ -53,7 +53,6 @@ bool doesReturnMemrefReturn(Operation *op) {
 bool isAllocatedByAllocOp(Value value) {
   if (auto definingOp = value.getDefiningOp()) {
     if (isa<memref::AllocOp>(definingOp)) {
-      definingOp->dump();
       return false;
     }
   }

@@ -3,7 +3,7 @@
 #Scriptino
 set -x
 
-start="/Users/c.stabile12/Downloads/anodo.mlir"
+start="/Users/c.stabile12/Downloads/TF/tosa.mlir"
 
 input="test-provvisori-2parte/after_official.mlir"
 middle="test-provvisori-2parte/middle.mlir"
@@ -23,31 +23,26 @@ pop_translate=build/debug/tools/mlir-translate/pop-translate
                     --empty-tensor-to-alloc-tensor \
                     --eliminate-empty-tensors \
                     --one-shot-bufferize="bufferize-function-boundaries" \
-                    --finalizing-bufferize 1> $middle
+                    --finalizing-bufferize \
+                    --convert-linalg-to-loops \
+                    --arith-expand  \
+                    --arith-unsigned-when-equivalent \
+                    --convert-scf-to-emitc \
+                    --fold-memref-alias-ops \
+                    --memref-expand \
+                    --convert-math-to-libm \
+                    --arith-expand \
+                    --arith-unsigned-when-equivalent \
+                    --convert-scf-to-emitc \
+                    --gpu-launch-sink-index-computations \
+                    --gpu-kernel-outlining  \
+                    --convert-scf-to-emitc \
+                    --arith-expand \
+                    --convert-arith-to-emitc \
+                    1> $input
 
 
-
-# ./$mlir_opt $output \
-#                     
-#                     
-#                     --convert-linalg-to-loops \
-#                     --arith-expand  \
-#                     --arith-unsigned-when-equivalent \
-#                     --convert-scf-to-emitc \
-#                     --fold-memref-alias-ops \
-#                     --memref-expand \
-#                     --convert-math-to-libm \
-#                     --arith-expand \
-#                     --arith-unsigned-when-equivalent \
-#                     --convert-scf-to-emitc \
-#                     --gpu-launch-sink-index-computations \
-#                     --gpu-kernel-outlining  \
-#                     --convert-scf-to-emitc \
-#                     1> $input 
-
-
-# ./$metal_opt $input   --arith-expand --convert-arith-to-emitc \
-#                       --convert-gpu-launch-func-to-metal --allow-unregistered-dialect  1> $middle
+./$metal_opt $input --convert-gpu-launch-func-to-metal  1> $middle
 
 # ./$metal_opt $middle  --lower-affine \
 #                       --memref-expand \
