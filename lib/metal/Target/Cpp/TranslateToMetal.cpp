@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <iostream>
 #include <stack>
+#include <string>
 #include <utility>
 
 #define DEBUG_TYPE "translate-to-cpp"
@@ -1091,21 +1092,24 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
-static LogicalResult getMemRefSize(MemRefType memrefType, int *x, int *y,
-                                   int *z) {
+static LogicalResult getMemRefSize(MemRefType memrefType,
+                                   SmallVector<std::string> &dimensions) {
+
   if (memrefType.getShape().size() > 3)
-    return failure(); // TODO
+    return failure();
   if (memrefType.getShape().size() < 1)
     return failure();
 
+  dimensions.resize(memrefType.getShape().size());
+
   if (memrefType.getShape().size() == 3) {
-    *z = memrefType.getDimSize(2);
+    dimensions[2] = std::to_string(memrefType.getDimSize(2));
   }
   if (memrefType.getShape().size() >= 2) {
-    *y = memrefType.getDimSize(1);
+    dimensions[1] = std::to_string(memrefType.getDimSize(1));
   }
   if (memrefType.getShape().size() >= 1) {
-    *x = memrefType.getDimSize(0);
+    dimensions[0] = std::to_string(memrefType.getDimSize(0));
   }
 
   return success();
@@ -1113,23 +1117,31 @@ static LogicalResult getMemRefSize(MemRefType memrefType, int *x, int *y,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::StoreOp storeOp) {
-  // Crea uno scope per l'emissione del codice
+
+  MemRefType memrefType = cast<MemRefType>(storeOp.getMemref().getType());
+  SmallVector<std::string> dimensions;
+
+  if (failed(getMemRefSize(memrefType, dimensions)))
+    return failure();
+
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
   os << emitter.getOrCreateName(storeOp.getOperand(1));
   os << "[";
 
+  // Converti std::string a StringRef per emitLinearIndexRefs
   SmallVector<StringRef, 3> stringRefs;
+  for (const auto &dim : dimensions) {
+    stringRefs.push_back(StringRef(dim));
+  }
 
-  // Emmette i riferimenti agli indici lineari
   if (failed(emitter.emitLinearIndexRefs(storeOp.getLoc(), stringRefs,
-                                         storeOp.getIndices(), false)))
+                                         storeOp.getIndices(), true)))
     return failure();
 
   os << "]";
   os << " = ";
-  // Emmette il nome del primo operando (sorgente del memref store)
   os << emitter.getOrCreateName(storeOp.getOperand(0));
 
   return success();
@@ -1139,13 +1151,13 @@ static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::LoadOp loadOp) {
 
   OpResult result = loadOp->getResult(0);
+
   MemRefType memrefType = cast<MemRefType>(loadOp.getMemref().getType());
+  SmallVector<std::string> dimensions;
 
-  int width = 1;
-  int length = 1;
-  int heigth = 1;
+  dimensions.resize(memrefType.getShape().size());
 
-  if (failed(getMemRefSize(memrefType, &width, &length, &heigth)))
+  if (failed(getMemRefSize(memrefType, dimensions)))
     return failure();
   if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
     return failure();
@@ -1154,11 +1166,13 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   raw_indented_ostream &os = emitter.ostream();
 
   os << "[";
-  SmallVector<StringRef, 3> stringRefs;
 
-  // Emmette i riferimenti agli indici lineari
+  SmallVector<StringRef, 3> stringRefs;
+  for (const auto &dim : dimensions) {
+    stringRefs.push_back(StringRef(dim));
+  }
   if (failed(emitter.emitLinearIndexRefs(loadOp.getLoc(), stringRefs,
-                                         loadOp.getIndices(), false)))
+                                         loadOp.getIndices(), true)))
     return failure();
   os << "]";
   return success();
@@ -2156,20 +2170,6 @@ LogicalResult MetalEmitter::emitTypeSize(Location loc, Type type) {
   return emitError(loc, "cannot emit type size") << type;
 }
 
-// LogicalResult MetalEmitter::emitLinearIndex(Location loc, SmallVector<int> ,
-//                                             SmallVector<Value> indices) {
-//   if (sizes.size() != indices.size())
-//     return failure();
-
-//   SmallVector<StringRef> stringRefs;
-
-//   for (int i = (int)sizes.size() - 1; i >= 0; i--) {
-//     stringRefs[i] = getOrCreateName(sizes[i]);
-//   }
-
-//   return emitLinearIndex(loc, stringRefs, indices);
-// }
-
 LogicalResult MetalEmitter::emitLinearIndex(Location loc,
                                             SmallVector<Value> sizes,
                                             SmallVector<Value> indices) {
@@ -2186,18 +2186,25 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc,
   return emitLinearIndexRefs(loc, stringRefs, indices, true);
 }
 
+//TODO passaggi degli SmallVector per riferimento
+
 LogicalResult
 MetalEmitter::emitLinearIndexRefs(Location loc,
                                   SmallVector<StringRef> stringRefs,
                                   SmallVector<Value> indices, bool preload) {
+
   if (!preload) {
+    stringRefs.clear();
+    stringRefs.reserve(3);
+
     stringRefs.push_back(StringRef("1"));
     stringRefs.push_back(StringRef("gridDim.y"));
     stringRefs.push_back(StringRef("gridDim.z"));
   }
 
-  if (indices.size() > stringRefs.size())
+  if (indices.size() > stringRefs.size()) {
     return failure();
+  }
 
   std::string line = "";
   std::string buffer = "1";

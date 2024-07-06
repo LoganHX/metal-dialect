@@ -29,6 +29,7 @@ module attributes {gpu.container_module} {
       %0 = "emitc.constant"() <{value = 1 : index}> : () -> index
       %1 = "emitc.constant"() <{value = 0 : index}> : () -> index
       %2 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
+      %3 = memref.load %arg0[%block_id_y, %block_id_x] : memref<10x10xf32>
       memref.store %2, %arg0[%block_id_y, %block_id_x] : memref<10x10xf32>
       gpu.return
     }

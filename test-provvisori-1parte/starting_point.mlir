@@ -7,6 +7,7 @@ func.func @main() {
   
   %A = memref.alloc() : memref<10x10xf32>
   scf.parallel (%i, %j) = (%c1, %c1) to (%c2, %c2) step (%step, %step) {
+    %t = memref.load %A[%j, %i] : memref<10x10xf32>
     memref.store %value, %A[%j, %i] : memref<10x10xf32>
   }
   memref.dealloc %A : memref<10x10xf32>

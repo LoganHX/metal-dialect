@@ -48,7 +48,9 @@ void main() {
     size_t v8 = 1;
     size_t v9 = 0;
     float v10 = 1.021000000e+01f;
-    v1[v2 * (1) + v3 * (1 * gridDim.y)] = v10;
+    float v11;
+    v11 = [v2 * (1) + v3 * (1 * 10)];
+    v1[v2 * (1) + v3 * (1 * 10)] = v10;
     return;
   }
 
