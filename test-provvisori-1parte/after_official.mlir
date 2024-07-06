@@ -1,17 +1,16 @@
 module attributes {gpu.container_module} {
-  func.func @main(%arg0: memref<10x10xf32>) {
+  func.func @main() -> memref<10x10xf32> {
     %0 = "emitc.constant"() <{value = 1 : index}> : () -> index
     %1 = "emitc.constant"() <{value = 0 : index}> : () -> index
     %2 = "emitc.constant"() <{value = 10 : index}> : () -> index
     %3 = "emitc.constant"() <{value = 1.021000e+01 : f32}> : () -> f32
-    %4 = memref.load %arg0[%1, %1] : memref<10x10xf32>
     %alloc = memref.alloc() : memref<10x10xf32>
-    %5 = "emitc.constant"() <{value = 1 : index}> : () -> index
+    %4 = "emitc.constant"() <{value = 1 : index}> : () -> index
+    %5 = "emitc.constant"() <{value = 10 : index}> : () -> index
     %6 = "emitc.constant"() <{value = 10 : index}> : () -> index
-    %7 = "emitc.constant"() <{value = 10 : index}> : () -> index
-    gpu.launch_func  @main_kernel::@main_kernel blocks in (%6, %7, %5) threads in (%5, %5, %5)  args(%alloc : memref<10x10xf32>)
+    gpu.launch_func  @main_kernel::@main_kernel blocks in (%5, %6, %4) threads in (%4, %4, %4)  args(%alloc : memref<10x10xf32>)
     memref.dealloc %alloc : memref<10x10xf32>
-    return
+    return %alloc : memref<10x10xf32>
   }
   gpu.module @main_kernel {
     gpu.func @main_kernel(%arg0: memref<10x10xf32>) kernel attributes {known_block_size = array<i32: 1, 1, 1>} {

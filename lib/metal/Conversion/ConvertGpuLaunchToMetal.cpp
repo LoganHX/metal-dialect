@@ -1,4 +1,5 @@
-//===--- ConvertGpuLaunchToMetal.cpp--------------------------------------------===//
+//===---
+//ConvertGpuLaunchToMetal.cpp--------------------------------------------===//
 //
 // This source file is part of the metal-dialect open source project
 // See LICENSE.txt for license information
@@ -24,13 +25,14 @@ namespace mlir::metal {
 #define GEN_PASS_DEF_CONVERTGPULAUNCHTOMETAL
 #include "metal/Conversion/MetalPasses.h.inc"
 
-
 bool doesReturnMemrefFunc(Operation *op) {
-  //TODO controlla solo il primo return value, andrebbe estesa per controllare per tutti
   if (auto funcOp = dyn_cast<func::FuncOp>(op)) {
-    if(funcOp.getResultTypes().size() == 0) return true;
-    if (isa<MemRefType>(funcOp.getResultTypes()[0])){
-      return false;
+    if (funcOp.getResultTypes().size() == 0)
+      return true;
+    for (int i = 0; i < (int)funcOp.getResultTypes().size(); i++) {
+      if (isa<MemRefType>(funcOp.getResultTypes()[0])) {
+        return false;
+      }
     }
     return true;
   }
@@ -38,11 +40,13 @@ bool doesReturnMemrefFunc(Operation *op) {
 }
 
 bool doesReturnMemrefReturn(Operation *op) {
-  //TODO controlla solo il primo return value, andrebbe estesa per controllare per tutti
   if (auto returnOp = dyn_cast<func::ReturnOp>(op)) {
-    if (returnOp.getOperands().size() == 0) return true;
-    if (isa<MemRefType>(returnOp.getOperand(0).getType())){
-      return false;
+    if (returnOp.getOperands().size() == 0)
+      return true;
+    for (int i = 0; i < (int)returnOp.getOperands().size(); i++) {
+      if (isa<MemRefType>(returnOp.getOperand(i).getType())) {
+        return false;
+      }
     }
     return true;
   }

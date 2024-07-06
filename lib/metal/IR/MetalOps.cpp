@@ -153,7 +153,6 @@ mlir::ParseResult KernelOp::parse(mlir::OpAsmParser &parser,
 //===----------------------------------------------------------------------===//
 // Check Index
 //===----------------------------------------------------------------------===//
-// TODO cosa fa?
 // static mlir::LogicalResult
 // checkIndex(mlir::Operation *op, MetalMemRefType memRef, mlir::Value index) {
 //   if (auto constantOp = index.getDefiningOp<ConstantOp>()) {

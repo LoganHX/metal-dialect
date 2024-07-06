@@ -1,5 +1,5 @@
 
-  func.func @main(%arg0: memref<10x10xf32>) -> () {
+  func.func @main() -> (memref<10x10xf32>) {
   %step = arith.constant 1: index
   %c1 = arith.constant 0 : index
   %c2 = arith.constant 10 : index
@@ -12,7 +12,7 @@
   }
   memref.dealloc %A : memref<10x10xf32>
 
-  func.return
+  func.return %A : memref<10x10xf32>
 }
 
 

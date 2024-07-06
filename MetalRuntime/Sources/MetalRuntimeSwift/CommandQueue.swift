@@ -63,7 +63,7 @@ public class CommandQueue: Wrappable {
         }
         
         let bufferA = device.makeBuffer(bytesNoCopy: matA,
-                                        length: calculateAlignmentSize(size: rowsA*columnsA*elementSize),//TODO
+                                        length: calculateAlignmentSize(size: rowsA*columnsA*elementSize),
                                         options: .storageModeShared)
         let bufferB = device.makeBuffer(bytesNoCopy: matB,
                                         length: calculateAlignmentSize(size: rowsB*columnsB*elementSize),

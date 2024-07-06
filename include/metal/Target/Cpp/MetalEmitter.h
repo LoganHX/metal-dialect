@@ -10,7 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MLIR_TARGET_METAL_METALEMITTER_H //TODO potrebbe costiuire un problema questa include guard
+#ifndef MLIR_TARGET_METAL_METALEMITTER_H 
 #define MLIR_TARGET_METAL_METALEMITTER_H
 
 #include "mlir/Support/LLVM.h"

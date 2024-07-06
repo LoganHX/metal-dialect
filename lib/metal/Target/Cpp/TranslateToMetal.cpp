@@ -1424,9 +1424,8 @@ static LogicalResult printKernelSizeVariables(MetalEmitter &emitter) {
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
-  os << ", uint3 id [[thread_position_in_grid]], uint3 gridDim "
-        "[[threads_per_grid]]"; // TODO forse sarebbe meglio creare questi tipi
-                                // unit3?
+  os << ", " << "uint3 id [[thread_position_in_grid]], uint3 gridDim "
+        "[[threads_per_grid]]";
 
   return success();
 }
