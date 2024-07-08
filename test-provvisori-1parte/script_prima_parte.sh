@@ -17,7 +17,8 @@ pop_translate=build/debug/tools/mlir-translate/pop-translate
                     --gpu-launch-sink-index-computations \
                     --gpu-kernel-outlining \
                     --lower-affine \
-                    --convert-arith-to-emitc 1> $input 
+                    --convert-arith-to-emitc \
+                    --convert-scf-to-emitc 1> $input 
 
 
 ./$metal_opt $input --convert-func-to-func  --convert-gpu-launch-func-to-metal 1> $middle

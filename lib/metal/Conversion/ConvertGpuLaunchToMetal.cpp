@@ -85,8 +85,8 @@ bool doesReturnMemrefReturn(Operation *op) {
 // Check se il memref è definito tramite memref::AllocOp
 bool isAllocatedByAllocOp(Value value) {
   if (auto definingOp = value.getDefiningOp()) {
-    if (isa<memref::AllocOp>(definingOp)) {
-      return false;
+    if (auto allocOp = dyn_cast<memref::AllocOp>(definingOp)) {
+      return isAllocatedBufferUsedByGPU(allocOp);
     }
   }
   return true;
