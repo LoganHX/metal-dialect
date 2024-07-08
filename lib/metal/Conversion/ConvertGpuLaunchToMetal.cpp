@@ -25,6 +25,35 @@ namespace mlir::metal {
 #define GEN_PASS_DEF_CONVERTGPULAUNCHTOMETAL
 #include "metal/Conversion/MetalPasses.h.inc"
 
+bool isAllocatedBufferUsedByGPU(memref::AllocOp allocOp) {
+  for (auto *user : allocOp.getResult().getUsers()) {
+    if (auto launchOp = dyn_cast<gpu::LaunchFuncOp>(user)) {
+      for (Value arg : launchOp.getKernelOperands()) {
+        if (arg == allocOp.getResult()) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+bool isDeallocatedBufferUsedByGPU(memref::DeallocOp deallocOp) {
+  Value buffer = deallocOp.getMemref();
+
+  for (auto *user : buffer.getUsers()) {
+    if (auto launchOp = dyn_cast<gpu::LaunchFuncOp>(user)) {
+      for (Value arg : launchOp.getKernelOperands()) {
+        if (arg == buffer) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+
 bool doesReturnMemrefFunc(Operation *op) {
   if (auto funcOp = dyn_cast<func::FuncOp>(op)) {
     if (funcOp.getResultTypes().size() == 0)
@@ -100,6 +129,11 @@ struct ConvertGpuLaunchToMetal
     target.addIllegalOp<memref::DeallocOp>();
 
     target.addLegalDialect<bufferization::BufferizationDialect>();
+
+    target.addDynamicallyLegalOp<memref::AllocOp>(
+        [](memref::AllocOp op) { return isAllocatedBufferUsedByGPU(op); });
+    target.addDynamicallyLegalOp<memref::DeallocOp>(
+        [](memref::DeallocOp op) { return isDeallocatedBufferUsedByGPU(op); });
 
     target.addDynamicallyLegalOp<memref::LoadOp>(
         [](memref::LoadOp op) { return isLoadOrStoreOpValid(op); });

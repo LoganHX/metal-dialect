@@ -155,8 +155,8 @@ struct MetalEmitter {
                                         bool trailingSemicolon);
 
   /// Emits a declaration of a variable with the given type and name.
-  LogicalResult emitVariableDeclaration(Location loc, Type type,
-                                        StringRef name, bool isGPUSide = false);
+  LogicalResult emitVariableDeclaration(Location loc, Type type, StringRef name,
+                                        bool isGPUSide = false);
   /// Emits a declaration of a variable with the given type and name.
   LogicalResult emitKnownTypeVariableDeclaration(Location loc, StringRef type,
                                                  StringRef name,
@@ -961,12 +961,14 @@ static LogicalResult printFunctionArgs(MetalEmitter &emitter,
 
 static LogicalResult printFunctionArgs(MetalEmitter &emitter,
                                        Operation *functionOp,
-                                       Region::BlockArgListType arguments, bool isGPUSide = false) {
+                                       Region::BlockArgListType arguments,
+                                       bool isGPUSide = false) {
   raw_indented_ostream &os = emitter.ostream();
   return (interleaveCommaWithError(
       arguments, os, [&](BlockArgument arg) -> LogicalResult {
         return emitter.emitVariableDeclaration(
-            functionOp->getLoc(), arg.getType(), emitter.getOrCreateName(arg), isGPUSide);
+            functionOp->getLoc(), arg.getType(), emitter.getOrCreateName(arg),
+            isGPUSide);
       }));
 }
 
@@ -1150,8 +1152,6 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     memref::LoadOp loadOp) {
 
-  OpResult result = loadOp->getResult(0);
-
   MemRefType memrefType = cast<MemRefType>(loadOp.getMemref().getType());
   SmallVector<std::string> dimensions;
 
@@ -1159,12 +1159,14 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   if (failed(getMemRefSize(memrefType, dimensions)))
     return failure();
-  if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
-    return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
+  OpResult result = loadOp->getResult(0);
+  if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
+    return failure();
+  os << emitter.getOrCreateName(loadOp.getOperand(0));
   os << "[";
 
   SmallVector<StringRef, 3> stringRefs;
@@ -1424,7 +1426,8 @@ static LogicalResult printKernelSizeVariables(MetalEmitter &emitter) {
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
-  os << ", " << "uint3 id [[thread_position_in_grid]], uint3 gridDim "
+  os << ", "
+     << "uint3 id [[thread_position_in_grid]], uint3 gridDim "
         "[[threads_per_grid]]";
 
   return success();
@@ -1443,7 +1446,8 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   os << "(";
   Operation *operation = functionOp.getOperation();
-  if (failed(printFunctionArgs(emitter, operation, functionOp.getArguments(), true)))
+  if (failed(printFunctionArgs(emitter, operation, functionOp.getArguments(),
+                               true)))
     return failure();
   if (failed(printKernelSizeVariables(emitter)))
     return failure();
@@ -2016,7 +2020,8 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
 }
 
 LogicalResult MetalEmitter::emitVariableDeclaration(Location loc, Type type,
-                                                    StringRef name, bool isGPUSide) {
+                                                    StringRef name,
+                                                    bool isGPUSide) {
   if (auto arrType = dyn_cast<emitc::ArrayType>(type)) {
     if (failed(emitType(loc, arrType.getElementType(), isGPUSide)))
       return failure();
@@ -2042,7 +2047,8 @@ LogicalResult MetalEmitter::emitKnownTypeVariableDeclaration(
 
 LogicalResult MetalEmitter::emitType(Location loc, Type type, bool isGPUSide) {
   if (auto memrefType = dyn_cast<MemRefType>(type)) {
-    if(isGPUSide) os << "device ";
+    if (isGPUSide)
+      os << "device ";
     if (failed(emitType(loc, memrefType.getElementType())))
       return failure();
     os << "*";
@@ -2184,7 +2190,7 @@ LogicalResult MetalEmitter::emitLinearIndex(Location loc,
   return emitLinearIndexRefs(loc, stringRefs, indices, true);
 }
 
-//TODO passaggi degli SmallVector per riferimento
+// TODO passaggi degli SmallVector per riferimento
 
 LogicalResult
 MetalEmitter::emitLinearIndexRefs(Location loc,
