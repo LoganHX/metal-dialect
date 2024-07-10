@@ -11,7 +11,7 @@ void main() {
   int64_t v8 = 10;
   int64_t v9 = 10;
   intptr_t v10;
-  v10 = _MetalDeviceMakeBuffer(v1, v7, v8 * v9 * sizeof(float));
+  v10 = _MetalDeviceMakeBuffer(v1, v7, v8 * v9, sizeof(float));
   float* v11;
   v11 = malloc(10 * sizeof(float));
   size_t v12 = 1;

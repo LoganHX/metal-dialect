@@ -1311,10 +1311,11 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
     mlir::Value dim = op.getDims()[i];
     os << emitter.getOrCreateName(dim);
-    os << " * ";
+    if(i != (int)op.getDims().size() -1) 
+      os << " * ";
   }
 
-  os << "sizeof(";
+  os << ", sizeof(";
   if (failed(emitter.emitType(op.getLoc(), op.getElementType())))
     return failure();
   os << ")";
