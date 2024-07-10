@@ -26,6 +26,9 @@
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
 
+#include "mlir/IR/Diagnostics.h"
+#include "llvm/Support/raw_ostream.h"
+
 #include <iostream>
 
 namespace {
@@ -238,18 +241,54 @@ struct LegalizeFuncOp : public OpConversionPattern<func::FuncOp> {
   using OpConversionPattern::OpConversionPattern;
 
   LogicalResult
-  matchAndRewrite(func::FuncOp f, OpAdaptor adaptor,
+  matchAndRewrite(func::FuncOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     std::vector<Type> argument_types;
-    for (auto arg : f.getBody().front().getArguments()) {
+    for (auto arg : op.getBody().front().getArguments()) {
       argument_types.push_back(arg.getType());
     }
     std::vector<Type> return_types;
     return_types.push_back(rewriter.getIndexType());
     auto newType =
         FunctionType::get(rewriter.getContext(), argument_types, return_types);
-    rewriter.modifyOpInPlace(f, [&] { f.setFunctionType(newType); });
+    rewriter.modifyOpInPlace(op, [&] { op.setFunctionType(newType); });
 
+    return success();
+  }
+};
+
+struct LegalizeCallOp : public OpConversionPattern<func::CallOp> {
+  LegalizeCallOp(mlir::MLIRContext *context)
+      : OpConversionPattern<func::CallOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(func::CallOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+
+    SmallVector<Value, 4> newOperands;
+
+    for (size_t i = 0; i < op.getNumOperands(); i++) {
+      Value operand = adaptor.getOperands()[i];
+
+      if (isa<IndexType>(operand.getType()) &&
+          isa<MemRefType>(op.getOperand(i).getType()) &&
+          isa<metal::DeviceMakeBufferOp>(operand.getDefiningOp())) {
+        auto intptrToPtrOp = rewriter.create<metal::IntptrToPtrOp>(
+            op.getLoc(), op.getOperandTypes()[i], operand);
+
+        newOperands.push_back(intptrToPtrOp);
+      } else {
+        newOperands.push_back(operand);
+      }
+    }
+
+    rewriter.modifyOpInPlace(op, [&] {
+      for (size_t i = 0; i < op.getNumOperands(); i++) {
+        op.setOperand(i, newOperands[i]);
+      }
+    });
     return success();
   }
 };
@@ -280,18 +319,13 @@ struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
   LogicalResult
   matchAndRewrite(metal::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    
-     auto intValue = rewriter.create<emitc::ConstantOp>(
+
+    auto intValue = rewriter.create<emitc::ConstantOp>(
         op.getLoc(), rewriter.getIntegerType(32, false),
         rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
 
-    // llvm::errs() << "Adaptor Operands:\n";
-    // for (auto operand : adaptor.getOperands()) {
-    //   operand.dump();
-    // }
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
-        op.getLoc(), getQueue(op),
-        adaptor.getOperands()[0],
+        op.getLoc(), getQueue(op), adaptor.getOperands()[0],
         adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
         adaptor.getOperands()[1],
@@ -310,6 +344,6 @@ void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
     RewritePatternSet &patterns, MLIRContext *ctx) {
 
   patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
-                  ConvertDeallocOp, ConvertLoadOp,
-                  LegalizeReturnOp, LegalizeFuncOp, LegalizeMatmulOp>(ctx);
+                  ConvertDeallocOp, ConvertLoadOp, LegalizeReturnOp,
+                  LegalizeFuncOp, LegalizeMatmulOp, LegalizeCallOp>(ctx);
 }

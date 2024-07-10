@@ -273,6 +273,20 @@ def CommandBufferWaitUntilCompletedOp : Metal_Op<"command_buffer_wait_until_comp
   let assemblyFormat = "$commandBuffer attr-dict `:` type(operands)";
 }
 
+//===----------------------------------------------------------------------===//
+// IntptrToPtrOp
+//===----------------------------------------------------------------------===//
+
+def IntptrToPtrOp : Metal_Op<"castptr"> {
+ let summary = "Casts an intptr_t index to a memref";
+
+  let arguments = (ins Index:$index);
+  let results = (outs AnyMemRef:$memref);
+
+  let hasVerifier = 0;
+
+}
+
 
 
 #endif // METAL_OPS

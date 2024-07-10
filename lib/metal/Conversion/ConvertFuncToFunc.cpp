@@ -18,7 +18,8 @@ namespace mlir::metal {
 
 bool isFirstOpDeviceOp(Operation *op, StringRef name) {
   auto funcOp = dyn_cast<func::FuncOp>(op);
-  if (!funcOp || funcOp.getName() != name)
+
+  if (!funcOp)
     return true;
 
   auto &body = funcOp.getBody();

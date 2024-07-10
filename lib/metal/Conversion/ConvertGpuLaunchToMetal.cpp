@@ -28,15 +28,27 @@ namespace mlir::metal {
 bool isAllocatedBufferUsedByGPU(memref::AllocOp allocOp) {
   for (auto *user : allocOp.getResult().getUsers()) {
     if (auto launchOp = dyn_cast<gpu::LaunchFuncOp>(user)) {
+      launchOp.dump();
       for (Value arg : launchOp.getKernelOperands()) {
         if (arg == allocOp.getResult()) {
-          return false;
+          return true;
         }
       }
     }
+    if (auto matmulOp = dyn_cast<metal::MatmulOp>(user)) {
+      return true;
+    }
   }
-  return true;
+  return false;
 }
+bool isAllocatedByAllocOpAndUsedByGPU(Value value) {
+  if (auto definingOp = value.getDefiningOp()) {
+    if (auto allocOp = dyn_cast<memref::AllocOp>(definingOp)) {
+      return isAllocatedBufferUsedByGPU(allocOp);
+    }
+  }
+  return false;
+};
 
 bool isDeallocatedBufferUsedByGPU(memref::DeallocOp deallocOp) {
   Value buffer = deallocOp.getMemref();
@@ -45,60 +57,62 @@ bool isDeallocatedBufferUsedByGPU(memref::DeallocOp deallocOp) {
     if (auto launchOp = dyn_cast<gpu::LaunchFuncOp>(user)) {
       for (Value arg : launchOp.getKernelOperands()) {
         if (arg == buffer) {
-          return false;
+          return true;
         }
       }
     }
   }
-  return true;
+  //TODO devo ricordami sta storia di matmul
+  return false;
+}
+
+bool isArgumentAProblematicMemref(Operation *op) {
+  if (auto callOp = dyn_cast<func::CallOp>(op)) {
+    for (auto operand : callOp.getOperands()) {
+      if (isa<MemRefType>(operand.getType())) {
+        bool value = isAllocatedByAllocOpAndUsedByGPU(operand);
+        if(value) return true;
+      }
+    }
+  }
+  return false;
 }
 
 
 bool doesReturnMemrefFunc(Operation *op) {
   if (auto funcOp = dyn_cast<func::FuncOp>(op)) {
     if (funcOp.getResultTypes().size() == 0)
-      return true;
+      return false;
     for (int i = 0; i < (int)funcOp.getResultTypes().size(); i++) {
       if (isa<MemRefType>(funcOp.getResultTypes()[0])) {
-        return false;
+        return true;
       }
     }
-    return true;
+    return false;
   }
-  return true;
+  return false;
 }
 
 bool doesReturnMemrefReturn(Operation *op) {
   if (auto returnOp = dyn_cast<func::ReturnOp>(op)) {
     if (returnOp.getOperands().size() == 0)
-      return true;
+      return false;
     for (int i = 0; i < (int)returnOp.getOperands().size(); i++) {
       if (isa<MemRefType>(returnOp.getOperand(i).getType())) {
-        return false;
+        return true;
       }
     }
-    return true;
+    return false;
   }
-  return true;
+  return false;
 }
 
-// Check se il memref è definito tramite memref::AllocOp
-bool isAllocatedByAllocOp(Value value) {
-  if (auto definingOp = value.getDefiningOp()) {
-    if (auto allocOp = dyn_cast<memref::AllocOp>(definingOp)) {
-      return isAllocatedBufferUsedByGPU(allocOp);
-    }
-  }
-  return true;
-};
-
-// Funzione di utilità per controllare se l'operazione è valida
 bool isLoadOrStoreOpValid(Operation *op) {
   if (auto loadOp = dyn_cast<memref::LoadOp>(op)) {
-    return isAllocatedByAllocOp(loadOp.getMemRef());
+    return isAllocatedByAllocOpAndUsedByGPU(loadOp.getMemRef());
   }
   if (auto storeOp = dyn_cast<memref::StoreOp>(op)) {
-    return isAllocatedByAllocOp(storeOp.getMemRef());
+    return isAllocatedByAllocOpAndUsedByGPU(storeOp.getMemRef());
   }
   return false;
 };
@@ -131,19 +145,22 @@ struct ConvertGpuLaunchToMetal
     target.addLegalDialect<bufferization::BufferizationDialect>();
 
     target.addDynamicallyLegalOp<memref::AllocOp>(
-        [](memref::AllocOp op) { return isAllocatedBufferUsedByGPU(op); });
+        [](memref::AllocOp op) { return !isAllocatedBufferUsedByGPU(op); });
     target.addDynamicallyLegalOp<memref::DeallocOp>(
-        [](memref::DeallocOp op) { return isDeallocatedBufferUsedByGPU(op); });
+        [](memref::DeallocOp op) { return !isDeallocatedBufferUsedByGPU(op); });
 
     target.addDynamicallyLegalOp<memref::LoadOp>(
-        [](memref::LoadOp op) { return isLoadOrStoreOpValid(op); });
+        [](memref::LoadOp op) { return !isLoadOrStoreOpValid(op); });
     target.addDynamicallyLegalOp<memref::StoreOp>(
-        [](memref::StoreOp op) { return isLoadOrStoreOpValid(op); });
+        [](memref::StoreOp op) { return !isLoadOrStoreOpValid(op); });
+    
+    target.addDynamicallyLegalOp<func::CallOp>(
+        [](func::CallOp op) { return !isArgumentAProblematicMemref(op); });
 
-    target.addDynamicallyLegalOp<func::FuncOp>(
-        [](func::FuncOp op) { return doesReturnMemrefFunc(op); });
-    target.addDynamicallyLegalOp<func::ReturnOp>(
-        [](func::ReturnOp op) { return doesReturnMemrefReturn(op); });
+    // target.addDynamicallyLegalOp<func::FuncOp>(
+    //     [](func::FuncOp op) { return doesReturnMemrefFunc(op); });
+    // target.addDynamicallyLegalOp<func::ReturnOp>(
+    //     [](func::ReturnOp op) { return doesReturnMemrefReturn(op); });
     target.addDynamicallyLegalOp<metal::MatmulOp>(
         [](metal::MatmulOp op) { return !(op.getQueue() == nullptr); });
 

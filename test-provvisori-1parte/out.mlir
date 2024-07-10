@@ -7,4 +7,7 @@ void main() {
   size_t v4 = 0;
   size_t v5 = 10;
   float v6 = 1.021000000e+01f;
-  float v7 = 1.021000000e+01f;
+  bool v7 = false;
+  int64_t v8 = 10;
+  intptr_t v9;
+  v9 = _MetalDeviceMakeBuffer(v1, v7, v8);
