@@ -3,59 +3,39 @@ void main() {
   v1 = _MetalDeviceMakeDefault();
   intptr_t v2;
   v2 = _MetalDeviceMakeCommandQueue(v1);
-  size_t v3 = 1;
-  size_t v4 = 0;
-  size_t v5 = 10;
-  float v6 = 1.021000000e+01f;
+  bool v3 = false;
+  int64_t v4 = 4;
+  int64_t v5 = 4;
+  intptr_t v6;
+  v6 = _MetalDeviceMakeBuffer(v1, v3, v4 * v5, sizeof(float));
   bool v7 = false;
-  int64_t v8 = 10;
-  int64_t v9 = 10;
+  int64_t v8 = 4;
+  int64_t v9 = 4;
   intptr_t v10;
   v10 = _MetalDeviceMakeBuffer(v1, v7, v8 * v9, sizeof(float));
-  float* v11;
-  v11 = malloc(10 * sizeof(float));
-  size_t v12 = 1;
-  size_t v13 = 10;
-  size_t v14 = 10;
-  intptr_t v15;
-  v15 = _MetalCommandQueueMakeCommandBufferWithDefaultLibrary(v2, v13, v14, v12, (int8_t *)"main_kernel");
-  int64_t v16 = 0;
-  _MetalCommandBufferAddBuffer(v15, v10, v16);
-  _MetalCommandBufferCommit(v15);
-  _MetalCommandBufferWaitUntilCompleted(v15);
-  _MetalRelease(v15);
-  v11[v4 * (1)] = v6;
-  free(v11);
-  _MetalRelease(v10);
+  bool v11 = false;
+  int64_t v12 = 4;
+  int64_t v13 = 4;
+  intptr_t v14;
+  v14 = _MetalDeviceMakeBuffer(v1, v11, v12 * v13, sizeof(float));
+  float v15 = 3.000000000e+00f;
+  float v16 = 1.000000000e+00f;
+  float v17 = 2.000000000e+00f;
+  size_t v18 = 0;
+  size_t v19 = 4;
+  size_t v20 = 1;
+  for (size_t v21 = v18; v21 < v19; v21 += v20) {
+    for (size_t v22 = v18; v22 < v19; v22 += v20) {
+      _MetalStore_float(v6, v22 * (1) + v21 * (1 * v5), v16);
+      _MetalStore_float(v10, v22 * (1) + v21 * (1 * v9), v17);
+    };
+  }
+  uint32_t v23 = 32;
+  intptr_t v24;
+  v24 = _MetalMatMul(v2, v6, v4, v5, v10, v8, v9, v14, v23);
+  _MetalCommandBufferCommit(v24);
+  _MetalCommandBufferWaitUntilCompleted(v24);
   return;
 }
-
-  kernel void main_kernel(device float* v1, uint3 id [[thread_position_in_grid]], uint3 gridDim [[threads_per_grid]]) {
-    size_t v2;
-    v2 = id.x;
-    size_t v3;
-    v3 = id.y;
-    size_t v4;
-    v4 = id.z;
-
-
-
-    size_t v5;
-    v5 = gridDim.x;
-    size_t v6;
-    v6 = gridDim.y;
-    size_t v7;
-    v7 = gridDim.z;
-
-
-
-    size_t v8 = 1;
-    size_t v9 = 0;
-    float v10 = 1.021000000e+01f;
-    v1[v3 * (1) + v2 * (1 * 10)] = v10;
-    return;
-  }
-
-
 
 

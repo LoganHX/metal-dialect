@@ -43,9 +43,9 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
   LogicalResult
   matchAndRewrite(linalg::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
         op.getLoc(),
+        rewriter.getIndexType(),
         nullptr,
         adaptor.getOperands()[0], 
         nullptr, nullptr, 
@@ -53,7 +53,7 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
         nullptr, nullptr, 
         adaptor.getOperands()[2], 
         nullptr);
-    rewriter.replaceOp(op, rep);
+    rewriter.eraseOp(op);
 
     return success();
   }

@@ -93,13 +93,12 @@ def MatmulOp : Metal_Op<"matmul", [AttrSizedOperandSegments]> {
                       AnyType:$bufferC,
                       Optional<Int_Type>:$elementSize);
   
+  let results = (outs Index:$result);
 
   let hasVerifier = 0; //TODO scrivere i verifiers
 
-  // Aggiungi type($result) per specificare il tipo del risultato
-  //let assemblyFormat = "$queue `,` $bufferA `<` $rowsA `:`$columnsA `>` $bufferB `<` $rowsB `:`$columnsB `>` $bufferC `,` $elementSize attr-dict `:` type(operands) ";
-
 }
+
 
 //===----------------------------------------------------------------------===//
 // StoreOp

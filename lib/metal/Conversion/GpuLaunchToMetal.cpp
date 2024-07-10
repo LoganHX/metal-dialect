@@ -325,7 +325,7 @@ struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
         rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
 
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
-        op.getLoc(), getQueue(op), adaptor.getOperands()[0],
+        op.getLoc(), rewriter.getIndexType(), getQueue(op), adaptor.getOperands()[0],
         adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
         adaptor.getOperands()[1],

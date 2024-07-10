@@ -1237,9 +1237,15 @@ static LogicalResult printOperation(MetalEmitter &emitter, metal::MatmulOp op) {
   os << emitter.getOrCreateName(op.getBufferC());
   os << ", ";
   os << emitter.getOrCreateName(op.getElementSize());
+  os << ");\n";
+  os << "_MetalCommandBufferCommit(";
+  os << emitter.getOrCreateName(op->getResult(0));
+  os << ");\n";
+  os << "_MetalCommandBufferWaitUntilCompleted(";
+  os << emitter.getOrCreateName(op->getResult(0));
   os << ")";
 
-  return success();
+      return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
@@ -1311,7 +1317,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
     mlir::Value dim = op.getDims()[i];
     os << emitter.getOrCreateName(dim);
-    if(i != (int)op.getDims().size() -1) 
+    if (i != (int)op.getDims().size() - 1)
       os << " * ";
   }
 
