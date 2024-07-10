@@ -30,26 +30,19 @@ func.func @main() {
   %c2 = arith.constant 10 : index
   %value = arith.constant 10.21 : f32
   
-  %A = memref.alloc() : memref<10xf32>
+  %A = memref.alloc() : memref<10x10xf32>
   %B = memref.alloc() : memref<10xf32>
-  scf.parallel (%i) = (%c1) to (%c2) step (%step) {
-    memref.store %value, %A[%i] : memref<10xf32>
+  scf.parallel (%i, %j) = (%c1, %c1) to (%c2, %c2) step (%step, %step) {
+    memref.store %value, %A[%i, %j] : memref<10x10xf32>
   }
 
   memref.store %value, %B[%c1] : memref<10xf32>
 
-  call @foo(%A) : (memref<10xf32>) -> ()
-
+  memref.dealloc %B : memref<10xf32>
+  memref.dealloc %A : memref<10x10xf32>
   func.return
 }
 
-func.func @foo(%arg0: memref<10xf32>) -> () {
-  %c1 = arith.constant 0 : index
-  %value = arith.constant 21.10 : f32
-  memref.store %value, %arg0[%c1] : memref<10xf32>
-
-  func.return
-}
 
 
 

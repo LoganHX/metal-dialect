@@ -1087,7 +1087,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
-  os << "_MetalRelease(";
+  os << "free(";
   os << emitter.getOrCreateName(
       deallocOp.getOperand().getDefiningOp()->getOpResult(0));
   os << ")";
@@ -1160,12 +1160,13 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   if (failed(getMemRefSize(memrefType, dimensions)))
     return failure();
 
-  MetalEmitter::Scope scope(emitter);
-  raw_indented_ostream &os = emitter.ostream();
-
   OpResult result = loadOp->getResult(0);
   if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
     return failure();
+
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+
   os << emitter.getOrCreateName(loadOp.getOperand(0));
   os << "[";
 
@@ -1177,6 +1178,36 @@ static LogicalResult printOperation(MetalEmitter &emitter,
                                          loadOp.getIndices(), true)))
     return failure();
   os << "]";
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    memref::AllocOp allocOp) {
+
+  MemRefType memrefType = cast<MemRefType>(allocOp.getMemref().getType());
+  SmallVector<std::string> dimensions;
+
+  dimensions.resize(memrefType.getShape().size());
+
+  if (failed(getMemRefSize(memrefType, dimensions)))
+    return failure();
+  OpResult result = allocOp->getResult(0);
+  if (failed(emitter.emitVariableAssignmentAndDeclaration(result)))
+    return failure();
+  MetalEmitter::Scope scope(emitter);
+  raw_indented_ostream &os = emitter.ostream();
+
+  os << "malloc(";
+  for (size_t i = 0; i < dimensions.size(); i++) {
+    os << dimensions[i];
+    os << " * ";
+  }
+
+  os << "sizeof(";
+  if (failed(emitter.emitType(allocOp.getLoc(), memrefType.getElementType())))
+    return failure();
+  os << ")";
+  os << ")";
   return success();
 }
 
@@ -1262,6 +1293,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
 
 static LogicalResult printOperation(MetalEmitter &emitter,
                                     metal::DeviceMakeBufferOp op) {
+
   if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
           op->getResult(0), "intptr_t")))
     return failure();
@@ -1276,13 +1308,16 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   os << ", ";
 
   for (int i = 0; i < (int)op.getDims().size(); i++) {
-    if (i > 0) {
-      os << " * ";
-    }
+
     mlir::Value dim = op.getDims()[i];
     os << emitter.getOrCreateName(dim);
+    os << " * ";
   }
 
+  os << "sizeof(";
+  if (failed(emitter.emitType(op.getLoc(), op.getElementType())))
+    return failure();
+  os << ")";
   os << ")";
   return success();
 }
@@ -1996,7 +2031,8 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
                 metal::StoreOp, metal::GetElementOp,
                 metal::CommandBufferAddBufferOp, metal::MatmulOp>(
               [&](auto op) { return printOperation(*this, op); })
-          .Case<memref::DeallocOp, memref::StoreOp, memref::LoadOp>(
+          .Case<memref::DeallocOp, memref::StoreOp, memref::LoadOp,
+                memref::AllocOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<emitc::LiteralOp>([&](auto op) { return success(); })
           .Default([&](Operation *) {
