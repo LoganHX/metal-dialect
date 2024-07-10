@@ -90,9 +90,7 @@ public class CommandQueue: Wrappable {
         let matrixC = MPSMatrix(buffer: bufferC!, descriptor: descriptorC)
         
         
-        let matrixMultiplication = MPSMatrixMultiplication(device: device, 
-                                                           //TODO credo c'entri l'indexing che ho usato
-                                                           //riguardo il fatto che devo invertire i booleani di //dx e sx
+        let matrixMultiplication = MPSMatrixMultiplication(device: device,
                                                            transposeLeft: transposeA,
                                                            transposeRight: transposeB,
                                                            resultRows: rowsA,
@@ -132,7 +130,7 @@ public class CommandQueue: Wrappable {
                 //(z * xSize * ySize) + (y * xSize) + x;
                 
                 // Calcoliamo l'indice nel buffer per l'elemento corrente
-                let index = col * rowCount + row
+                let index = col + row * columnCount
                 // Leggiamo il valore float dal buffer
                 let value = pointer.load(fromByteOffset: index * elementSize, as: Float.self)
                 // Stampiamo il valore

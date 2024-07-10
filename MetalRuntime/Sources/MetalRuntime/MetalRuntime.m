@@ -206,14 +206,14 @@ intptr_t _MetalMatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
 intptr_t _MetalMatMul_TransposeLeft(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
                       intptr_t matB, int rowsB, int columnsB,
                       intptr_t matC, int elSize) {
-    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, false, true); //TODO
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, true, false);
     
 }
 
 intptr_t _MetalMatMul_TransposeRight(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
                       intptr_t matB, int rowsB, int columnsB,
                       intptr_t matC, int elSize) {
-    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, true, false); //TODO
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, false, true);
     
 }
 
