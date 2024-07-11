@@ -10,6 +10,9 @@
 #include "metal/IR/MetalDialect.h"
 #include "metal/IR/MetalOps.h"
 #include "mlir/Pass/Pass.h"
+#include "shader/IR/ShaderDialect.h"
+#include "shader/IR/ShaderOps.h"
+
 
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"

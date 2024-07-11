@@ -14,8 +14,11 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "metal/IR/MetalDialect.h"
+#include "shader/IR/ShaderDialect.h"
 #include "mlir/Dialect/Math/IR/Math.h"
 #include "metal/IR/MetalOps.h"
+#include "shader/IR/ShaderOps.h"
+
 #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Arith/IR/ValueBoundsOpInterfaceImpl.h"
@@ -60,6 +63,7 @@ void registerToMetalTranslation() {
         // clang-format off
         registry.insert<cf::ControlFlowDialect,
                         gpu::GPUDialect,
+                        shader::ShaderDialect,
                         linalg::LinalgDialect,
                         metal::MetalDialect,
                         mlir::arith::ArithDialect,

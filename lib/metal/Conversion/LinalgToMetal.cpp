@@ -21,6 +21,7 @@
 #include "mlir/IR/IntegerSet.h"
 #include "mlir/IR/Types.h"
 #include "mlir/Transforms/DialectConversion.h"
+#include "shader/IR/ShaderOps.h"
 
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
@@ -51,14 +52,16 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
   LogicalResult
   matchAndRewrite(linalg::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-
-    auto rep = rewriter.create<mlir::metal::MatmulOp>(
+    op.dump();
+    auto rep = rewriter.create<mlir::shader::MatmulOp>(
         op.getLoc(), rewriter.getIndexType(), nullptr, 
         adaptor.getOperands()[0], nullptr, nullptr, 
         adaptor.getOperands()[1], nullptr, nullptr,
         adaptor.getOperands()[2],
         getElementType(adaptor.getOperands()[2].getType()));
     rewriter.eraseOp(op);
+
+    rep.dump();
 
     return success();
   }

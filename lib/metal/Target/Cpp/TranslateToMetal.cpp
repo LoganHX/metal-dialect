@@ -21,6 +21,10 @@
 #include "mlir/Support/IndentedOstream.h"
 #include "mlir/Support/LLVM.h"
 
+#include "shader/IR/ShaderDialect.h"
+#include "shader/IR/ShaderOps.h"
+
+
 #include "metal/Target/Cpp/MetalEmitter.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
@@ -1211,7 +1215,7 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter, metal::MatmulOp op) {
+static LogicalResult printOperation(MetalEmitter &emitter, shader::MatmulOp op) {
   if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
           op->getResult(0), "intptr_t")))
     return failure();
@@ -1237,7 +1241,8 @@ static LogicalResult printOperation(MetalEmitter &emitter, metal::MatmulOp op) {
   os << emitter.getOrCreateName(op.getBufferC());
   os << ", ";
   os << "\"";
-  emitter.emitType(op.getLoc(), op.getElementType());
+  if(failed(emitter.emitType(op.getLoc(), op.getElementType())))
+    return failure();
   os << "\"";
   os << ")";
 
@@ -2032,7 +2037,7 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
                 metal::CommandQueueMakeCommandBufferOp,
                 metal::CommandBufferWaitUntilCompletedOp, metal::ReleaseOp,
                 metal::StoreOp, metal::GetElementOp,
-                metal::CommandBufferAddBufferOp, metal::MatmulOp>(
+                metal::CommandBufferAddBufferOp, shader::MatmulOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<memref::DeallocOp, memref::StoreOp, memref::LoadOp,
                 memref::AllocOp>(

@@ -1,0 +1,7 @@
+add_mlir_dialect(ShaderOps shader)
+set(LLVM_TARGET_DEFINITIONS ShaderOps.td)
+mlir_tablegen(ShaderOpsEnums.h.inc -gen-enum-decls)
+mlir_tablegen(ShaderOpsEnums.cpp.inc -gen-enum-defs)
+add_public_tablegen_target(MLIRShaderOpsEnumsGen)
+add_mlir_doc(ShaderDialect ShaderDialect shader/ -gen-dialect-doc)
+add_mlir_doc(ShaderOps ShaderOps shader/ -gen-op-doc)

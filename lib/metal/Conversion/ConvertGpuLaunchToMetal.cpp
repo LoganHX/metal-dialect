@@ -16,6 +16,7 @@
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Tosa/IR/TosaOps.h"
+#include "shader/IR/ShaderOps.h"
 
 #include "mlir/Transforms/DialectConversion.h"
 #include <iostream>
@@ -35,7 +36,7 @@ bool isAllocatedBufferUsedByGPU(memref::AllocOp allocOp) {
         }
       }
     }
-    if (auto matmulOp = dyn_cast<metal::MatmulOp>(user)) {
+    if (auto matmulOp = dyn_cast<shader::MatmulOp>(user)) {
       return true;
     }
   }
@@ -161,8 +162,8 @@ struct ConvertGpuLaunchToMetal
     //     [](func::FuncOp op) { return doesReturnMemrefFunc(op); });
     // target.addDynamicallyLegalOp<func::ReturnOp>(
     //     [](func::ReturnOp op) { return doesReturnMemrefReturn(op); });
-    target.addDynamicallyLegalOp<metal::MatmulOp>(
-        [](metal::MatmulOp op) { return !(op.getQueue() == nullptr); });
+    target.addDynamicallyLegalOp<shader::MatmulOp>(
+        [](shader::MatmulOp op) { return !(op.getQueue() == nullptr); });
 
     RewritePatternSet patterns(&getContext());
     mlir::metal::populateGpuLaunchToMetalConversionPatterns(patterns,

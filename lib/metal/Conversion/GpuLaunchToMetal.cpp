@@ -9,6 +9,8 @@
 
 #include "metal/Conversion/GpuLaunchToMetal.h"
 #include "metal/IR/MetalOps.h"
+#include "shader/IR/ShaderOps.h"
+
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -310,17 +312,17 @@ struct LegalizeReturnOp : public OpConversionPattern<func::ReturnOp> {
   }
 };
 
-struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
+struct LegalizeMatmulOp : public OpConversionPattern<shader::MatmulOp> {
   LegalizeMatmulOp(mlir::MLIRContext *context)
-      : OpConversionPattern<metal::MatmulOp>(context) {}
+      : OpConversionPattern<shader::MatmulOp>(context) {}
 
   using OpConversionPattern::OpConversionPattern;
 
   LogicalResult
-  matchAndRewrite(metal::MatmulOp op, OpAdaptor adaptor,
+  matchAndRewrite(shader::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto rep = rewriter.create<mlir::metal::MatmulOp>(
+    auto rep = rewriter.create<mlir::shader::MatmulOp>(
         op.getLoc(), rewriter.getIndexType(), getQueue(op),
         adaptor.getOperands()[0],
         adaptor.getOperands()[0].getDefiningOp()->getOperand(2),

@@ -4,7 +4,8 @@ set(LIBS
         ${dialect_libs}
         ${conversion_libs}
         MLIROptLib
-        MLIRMetal
+        MLIRMetal  
+        MLIRShader     
         )
 add_llvm_executable(metal-opt metal-opt.cpp)
 

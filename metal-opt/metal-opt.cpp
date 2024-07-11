@@ -8,6 +8,8 @@
 #include "metal/Conversion/MetalPasses.h"
 #include "mlir/Dialect/Math/IR/Math.h"
 #include "metal/IR/MetalDialect.h"
+#include "shader/IR/ShaderDialect.h"
+#include "shader/IR/ShaderOps.h"
 #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
@@ -32,6 +34,7 @@ int main(int argc, char **argv) {
                   mlir::metal::MetalDialect, mlir::gpu::GPUDialect,
                   mlir::memref::MemRefDialect, mlir::emitc::EmitCDialect,
                   mlir::linalg::LinalgDialect, mlir::math::MathDialect,
+                  mlir::shader::ShaderDialect,
                   mlir::bufferization::BufferizationDialect, mlir::tosa::TosaDialect,
                   mlir::scf::SCFDialect, mlir::affine::AffineDialect>();
   // Add the following to include *all* MLIR Core dialects, or selectively

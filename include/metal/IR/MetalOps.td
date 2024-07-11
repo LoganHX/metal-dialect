@@ -80,24 +80,24 @@ def ReturnOp : Metal_Op<"return", [Pure, Terminator]> {
   let assemblyFormat = "attr-dict";
 }
 
-//===----------------------------------------------------------------------===//
-// MatmulOp
-//===----------------------------------------------------------------------===//
+// //===----------------------------------------------------------------------===//
+// // MatmulOp
+// //===----------------------------------------------------------------------===//
 
-def MatmulOp : Metal_Op<"matmul", [AttrSizedOperandSegments]> {
-  let summary = "Matrix multiplication operation";
+// def MatmulOp : Metal_Op<"matmul", [AttrSizedOperandSegments]> {
+//   let summary = "Matrix multiplication operation";
 
-  let arguments = (ins Optional<Index>:$queue, 
-                      AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA,
-                      AnyType:$bufferB, Optional<Int_Type>:$rowsB, Optional<Int_Type>:$columnsB,
-                      AnyType:$bufferC,
-                      TypeAttr:$elementType);
+//   let arguments = (ins Optional<Index>:$queue, 
+//                       AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA,
+//                       AnyType:$bufferB, Optional<Int_Type>:$rowsB, Optional<Int_Type>:$columnsB,
+//                       AnyType:$bufferC,
+//                       TypeAttr:$elementType);
   
-  let results = (outs Index:$result);
+//   let results = (outs Index:$result);
 
-  let hasVerifier = 0; //TODO scrivere i verifiers
+//   let hasVerifier = 0; //TODO scrivere i verifiers
 
-}
+// }
 
 
 //===----------------------------------------------------------------------===//
