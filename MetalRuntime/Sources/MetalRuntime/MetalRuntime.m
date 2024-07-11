@@ -174,10 +174,16 @@ void _MetalCommandBufferWaitUntilCompleted(intptr_t ref) {
 
 intptr_t _Generic_MatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
                         intptr_t matB, int rowsB, int columnsB,
-                        intptr_t matC, int elSize, bool transposeA, bool transposeB){
+                        intptr_t matC,
+                        const char *elementType,
+                        bool transposeA, bool transposeB){
     void* tmpA = _MetalBufferGetContents2(matA);
     void* tmpB = _MetalBufferGetContents2(matB);
     void* tmpC = _MetalBufferGetContents2(matC);
+    
+
+    NSString *tipo = [NSString stringWithCString:(const char *)elementType
+                                             encoding:NSUTF8StringEncoding];
     
     intptr_t value = 0;
     @autoreleasepool {
@@ -185,45 +191,50 @@ intptr_t _Generic_MatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
         value = [[instance matMulWithMatA:tmpA rowsA:rowsA columnsA:columnsA
                                      matB:tmpB rowsB:rowsB columnsB:columnsB
                                      matC:tmpC
-                                     elementSize:elSize
-                                     typeName:@"float"
+                                     elementType:tipo
                                      transposeA:transposeA transposeB:transposeB] wrap];
     }
   return value;
     
 }
 
-intptr_t _MetalMatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
+intptr_t _MetalMatMul(intptr_t ref,
+                      intptr_t matA, int rowsA, int columnsA,
                       intptr_t matB, int rowsB, int columnsB,
-                      intptr_t matC, int elSize) {
-    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, false, false);
+                      intptr_t matC,
+                      const char *elementType
+) {
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elementType, false, false);
     
 }
 
-//credo c'entri l'indexing che ho usato
-//riguardo il fatto che devo invertire i booleani di //dx e sx
-
-intptr_t _MetalMatMul_TransposeLeft(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
-                      intptr_t matB, int rowsB, int columnsB,
-                      intptr_t matC, int elSize) {
-    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, true, false);
+intptr_t _MetalMatMul_TransposeLeft(intptr_t ref,
+                                    intptr_t matA, int rowsA, int columnsA,
+                                    intptr_t matB, int rowsB, int columnsB,
+                                    intptr_t matC,
+                                    const char *elementType
+              ) {
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elementType, true, false);
+    
+}
+intptr_t _MetalMatMul_TransposeRight(intptr_t ref,
+                                     intptr_t matA, int rowsA, int columnsA,
+                                     intptr_t matB, int rowsB, int columnsB,
+                                     intptr_t matC,
+                                     const char *elementType
+               ) {
+    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elementType, false, true);
     
 }
 
-intptr_t _MetalMatMul_TransposeRight(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
-                      intptr_t matB, int rowsB, int columnsB,
-                      intptr_t matC, int elSize) {
-    return _Generic_MatMul(ref, matA, rowsA, columnsA, matB, rowsB, columnsB, matC, elSize, false, true);
-    
-}
 
-
-void _MetalPrintMat(intptr_t ref, intptr_t mat, int rows, int columns, int elSize) {
+void _MetalPrintMat(intptr_t ref, intptr_t mat, int rows, int columns, const char* elementType) {
     void* tmp = _MetalBufferGetContents2(mat);
-
+        NSString *elType = [NSString stringWithCString:elementType
+                                             encoding:NSUTF8StringEncoding];
         @autoreleasepool {
         CommandQueue *instance = [CommandQueue unwrap:ref];
-        [instance printMatWithMat:tmp rows:rows columns:columns elementSize:elSize];
+        [instance printMatWithMat:tmp rows:rows columns:columns elementType:elType];
     }
   return;
 }

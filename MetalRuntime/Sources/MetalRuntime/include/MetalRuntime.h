@@ -67,26 +67,29 @@ void _MetalCommandBufferWaitUntilCompleted(intptr_t ref);
 // MatrixMultiplication
 
 
-void _MetalPrintMat(intptr_t ref, intptr_t mat, int rows, int columns, int elSize);
+void _MetalPrintMat(intptr_t ref, intptr_t mat, int rows, int columns, const char* elementType);
 
 //TODO credo c'entri l'indexing che ho usato
 //riguardo il fatto che devo invertire i booleani di //dx e sx
 
-intptr_t _MetalMatMul(intptr_t ref, 
+intptr_t _MetalMatMul(intptr_t ref,
                       intptr_t matA, int rowsA, int columnsA,
                       intptr_t matB, int rowsB, int columnsB,
                       intptr_t matC,
-                      int elSize);
+                      const char *elementType
+                      );
 intptr_t _MetalMatMul_TransposeLeft(intptr_t ref,
-                      intptr_t matA, int rowsA, int columnsA,
-                      intptr_t matB, int rowsB, int columnsB,
-                      intptr_t matC,
-                      int elSize);
+                                    intptr_t matA, int rowsA, int columnsA,
+                                    intptr_t matB, int rowsB, int columnsB,
+                                    intptr_t matC,
+                                    const char *elementType
+                                    );
 intptr_t _MetalMatMul_TransposeRight(intptr_t ref,
-                      intptr_t matA, int rowsA, int columnsA,
-                      intptr_t matB, int rowsB, int columnsB,
-                      intptr_t matC,
-                      int elSize);
+                                     intptr_t matA, int rowsA, int columnsA,
+                                     intptr_t matB, int rowsB, int columnsB,
+                                     intptr_t matC,
+                                     const char *elementType
+                                     );
 
 // _____________________________________________________________________________
 

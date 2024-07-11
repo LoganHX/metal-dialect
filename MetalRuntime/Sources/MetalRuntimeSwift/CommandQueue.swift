@@ -46,14 +46,36 @@ public class CommandQueue: Wrappable {
         }
     }
     
+    private func getTypeSize(dataType: MPSDataType) -> Int {
+        let elementSize: Int
+        switch dataType {
+           case .float32:
+               elementSize = MemoryLayout<Float>.size
+           case .float16:
+               elementSize = MemoryLayout<UInt16>.size // Float16 is often represented by UInt16
+           case .int32:
+               elementSize = MemoryLayout<Int32>.size
+           case .int16:
+               elementSize = MemoryLayout<Int16>.size
+           case .int8:
+               elementSize = MemoryLayout<Int8>.size
+           default:
+               elementSize = 0
+           }
+        return elementSize;
+    }
     
     @objc
     public func matMul(matA:UnsafeMutableRawPointer, rowsA: Int, columnsA: Int,
                        matB:UnsafeMutableRawPointer, rowsB: Int, columnsB: Int,
-                       matC:UnsafeMutableRawPointer, elementSize: Int, typeName: String,
+                       matC:UnsafeMutableRawPointer, elementType: String,
                        transposeA: Bool, transposeB: Bool) -> CommandBuffer? {
         
-        let dataType: MPSDataType = getDataType(typeName: typeName)
+        
+        let dataType: MPSDataType = getDataType(typeName: elementType)
+        let elementSize: Int
+        elementSize = getTypeSize(dataType: dataType)
+        
         guard dataType != .invalid else {
             return nil
         }
@@ -105,7 +127,12 @@ public class CommandQueue: Wrappable {
         
     }
     @objc
-    public func printMat(mat:UnsafeMutableRawPointer, rows: Int, columns: Int, elementSize: Int) {
+    public func printMat(mat:UnsafeMutableRawPointer, rows: Int, columns: Int, elementType: String) {
+        
+        let dataType: MPSDataType = getDataType(typeName: elementType)
+        let elementSize: Int
+        elementSize = getTypeSize(dataType: dataType)
+        
         
         let bufferA = device.makeBuffer(bytes: mat,
                                         length: rows*columns*elementSize,
@@ -130,7 +157,8 @@ public class CommandQueue: Wrappable {
                 //(z * xSize * ySize) + (y * xSize) + x;
                 
                 // Calcoliamo l'indice nel buffer per l'elemento corrente
-                let index = col + row * columnCount
+                let index = col + row * columnCount //column based
+                //let index = row + col * rowCount
                 // Leggiamo il valore float dal buffer
                 let value = pointer.load(fromByteOffset: index * elementSize, as: Float.self)
                 // Stampiamo il valore
