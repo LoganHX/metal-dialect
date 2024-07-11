@@ -170,6 +170,32 @@ void _MetalCommandBufferWaitUntilCompleted(intptr_t ref) {
 }
 
 // _____________________________________________________________________________
+// MatrixSum
+
+intptr_t _MetalMatSum(intptr_t ref, intptr_t matA, int rowsA, int columnsA,
+                        intptr_t matB, int rowsB, int columnsB,
+                        intptr_t matC,
+                        const char *elementType){
+    void* tmpA = _MetalBufferGetContents2(matA);
+    void* tmpB = _MetalBufferGetContents2(matB);
+    void* tmpC = _MetalBufferGetContents2(matC);
+    
+
+    NSString *tipo = [NSString stringWithCString:(const char *)elementType
+                                             encoding:NSUTF8StringEncoding];
+    
+    intptr_t value = 0;
+    @autoreleasepool {
+        CommandQueue *instance = [CommandQueue unwrap:ref];
+        value = [[instance matSumWithMatA:tmpA rowsA:rowsA columnsA:columnsA
+                                     matB:tmpB rowsB:rowsB columnsB:columnsB
+                                     matC:tmpC elementType:tipo] wrap];
+    }
+  return value;
+    
+}
+
+// _____________________________________________________________________________
 // MatrixMultiplication
 
 intptr_t _Generic_MatMul(intptr_t ref, intptr_t matA, int rowsA, int columnsA,

@@ -126,6 +126,67 @@ public class CommandQueue: Wrappable {
         return CommandBuffer(device: device, commandBuffer: commandBuffer)
         
     }
+        
+    @objc
+    public func matSum(matA: UnsafeMutableRawPointer, rowsA: Int, columnsA: Int,
+                       matB: UnsafeMutableRawPointer, rowsB: Int, columnsB: Int,
+                       matC: UnsafeMutableRawPointer, elementType: String) -> CommandBuffer? {
+        
+        let dataType: MPSDataType = getDataType(typeName: elementType)
+        let elementSize: Int
+        elementSize = getTypeSize(dataType: dataType)
+        
+        guard dataType != .invalid else {
+            return nil
+        }
+        
+        guard rowsA == rowsB && columnsA == columnsB else {
+            return nil // Le matrici devono avere la stessa dimensione per essere sommate
+        }
+        
+        let bufferA = device.makeBuffer(bytesNoCopy: matA,
+                                        length: calculateAlignmentSize(size: rowsA * columnsA * elementSize),
+                                        options: .storageModeShared)
+        let bufferB = device.makeBuffer(bytesNoCopy: matB,
+                                        length: calculateAlignmentSize(size: rowsB * columnsB * elementSize),
+                                        options: .storageModeShared)
+        let bufferC = device.makeBuffer(bytesNoCopy: matC,
+                                        length: calculateAlignmentSize(size: rowsA * columnsB * elementSize),
+                                        options: .storageModeShared)
+        
+        let descriptorA = MPSMatrixDescriptor(rows: rowsA,
+                                              columns: columnsA,
+                                              rowBytes: columnsA * elementSize,
+                                              dataType: dataType)
+        let descriptorB = MPSMatrixDescriptor(rows: rowsB,
+                                              columns: columnsB,
+                                              rowBytes: columnsB * elementSize,
+                                              dataType: dataType)
+        let descriptorC = MPSMatrixDescriptor(rows: rowsA,
+                                              columns: columnsB,
+                                              rowBytes: columnsB * elementSize,
+                                              dataType: dataType)
+        
+        let matrixA = MPSMatrix(buffer: bufferA!, descriptor: descriptorA)
+        let matrixB = MPSMatrix(buffer: bufferB!, descriptor: descriptorB)
+        let matrixC = MPSMatrix(buffer: bufferC!, descriptor: descriptorC)
+        
+        let matrixSum = MPSMatrixSum(device: device, count: 2, rows: rowsA, columns: columnsA, transpose: false)
+        
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else { return nil }
+        
+        matrixSum.encode(to:commandBuffer,
+                         sourceMatrices: [matrixA, matrixB],
+                         resultMatrix: matrixC,
+                         scale: nil,
+                         offsetVector: nil,
+                         biasVector: nil,
+                         start: 0)
+        return CommandBuffer(device: device, commandBuffer: commandBuffer)
+    }
+
+    
+    
     @objc
     public func printMat(mat:UnsafeMutableRawPointer, rows: Int, columns: Int, elementType: String) {
         
