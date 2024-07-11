@@ -10,11 +10,6 @@
 
 include "mlir/Pass/PassBase.td"
 
-def ConvertMetalToLLVM : Pass<"convert-metal-to-llvm"> {
-  let summary = "Convert Metal operations into the LLVM dialect";
-  let dependentDialects = ["LLVM::LLVMDialect"];
-}
-
 def ConvertFuncToFunc : Pass<"convert-func-to-func"> {
   let summary = "Converts Func to Func";
   let dependentDialects = ["mlir::metal::MetalDialect"];

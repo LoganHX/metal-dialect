@@ -320,19 +320,23 @@ struct LegalizeMatmulOp : public OpConversionPattern<metal::MatmulOp> {
   matchAndRewrite(metal::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto intValue = rewriter.create<emitc::ConstantOp>(
-        op.getLoc(), rewriter.getIntegerType(32, false),
-        rewriter.getIntegerAttr(rewriter.getIntegerType(32, false), 32));
-
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
-        op.getLoc(), rewriter.getIndexType(), getQueue(op), adaptor.getOperands()[0],
+        op.getLoc(), rewriter.getIndexType(), getQueue(op),
+        adaptor.getOperands()[0],
         adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
         adaptor.getOperands()[1],
         adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
-        adaptor.getOperands()[2], intValue);
-    rewriter.replaceOp(op, rep);
+        adaptor.getOperands()[2],
+        adaptor.getElementType());
+    rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(),
+                                                        rep.getResult());
+    rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(
+        op.getLoc(), rep.getResult());
+    rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), rep.getResult());
+
+    rewriter.eraseOp(op);
 
     return success();
   }

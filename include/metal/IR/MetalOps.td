@@ -88,10 +88,10 @@ def MatmulOp : Metal_Op<"matmul", [AttrSizedOperandSegments]> {
   let summary = "Matrix multiplication operation";
 
   let arguments = (ins Optional<Index>:$queue, 
-                      AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA, 
+                      AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA,
                       AnyType:$bufferB, Optional<Int_Type>:$rowsB, Optional<Int_Type>:$columnsB,
                       AnyType:$bufferC,
-                      Optional<Int_Type>:$elementSize);
+                      TypeAttr:$elementType);
   
   let results = (outs Index:$result);
 

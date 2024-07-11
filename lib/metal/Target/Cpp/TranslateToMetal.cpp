@@ -1236,13 +1236,9 @@ static LogicalResult printOperation(MetalEmitter &emitter, metal::MatmulOp op) {
   os << ", ";
   os << emitter.getOrCreateName(op.getBufferC());
   os << ", ";
-  os << emitter.getOrCreateName(op.getElementSize());
-  os << ");\n";
-  os << "_MetalCommandBufferCommit(";
-  os << emitter.getOrCreateName(op->getResult(0));
-  os << ");\n";
-  os << "_MetalCommandBufferWaitUntilCompleted(";
-  os << emitter.getOrCreateName(op->getResult(0));
+  os << "\"";
+  emitter.emitType(op.getLoc(), op.getElementType());
+  os << "\"";
   os << ")";
 
       return success();

@@ -13,7 +13,7 @@ func.func @main() {
 
   scf.for %i = %start to %end step %step {
     scf.for %j = %start to %end step %step {
-      memref.store %cst1, %A[%i, %j] : memref<4x4xf32>
+      memref.store %cst0, %A[%i, %j] : memref<4x4xf32>
       memref.store %cst2, %B[%i, %j] : memref<4x4xf32>
     }
   }

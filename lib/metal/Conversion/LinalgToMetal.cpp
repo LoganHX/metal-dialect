@@ -30,6 +30,14 @@
 
 namespace {
 
+mlir::Type getElementType(mlir::Type type) {
+  if (type.isa<mlir::MemRefType>()) {
+    return type.cast<mlir::MemRefType>().getElementType();
+  }
+  // Per altri tipi semplici, restituisci il tipo stesso
+  return type;
+}
+
 using namespace mlir;
 mlir::metal::DeviceMakeDefaultOp device;
 mlir::metal::DeviceMakeCommandQueueOp queue;
@@ -43,16 +51,13 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
   LogicalResult
   matchAndRewrite(linalg::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
+
     auto rep = rewriter.create<mlir::metal::MatmulOp>(
-        op.getLoc(),
-        rewriter.getIndexType(),
-        nullptr,
-        adaptor.getOperands()[0], 
-        nullptr, nullptr, 
-        adaptor.getOperands()[1],
-        nullptr, nullptr, 
-        adaptor.getOperands()[2], 
-        nullptr);
+        op.getLoc(), rewriter.getIndexType(), nullptr, 
+        adaptor.getOperands()[0], nullptr, nullptr, 
+        adaptor.getOperands()[1], nullptr, nullptr,
+        adaptor.getOperands()[2],
+        getElementType(adaptor.getOperands()[2].getType()));
     rewriter.eraseOp(op);
 
     return success();

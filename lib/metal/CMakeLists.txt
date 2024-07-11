@@ -5,10 +5,6 @@ add_subdirectory(Target)
 
 add_mlir_dialect_library(MLIRMetal
 		# Conversion
-		${LIB_HEADERS}/Conversion/MetalPasses.h
-		${LIB_HEADERS}/Conversion/MetalToLLVM.h
-		Conversion/ConvertMetalToLLVM.cpp
-		Conversion/MetalToLLVM.cpp
 		
 		${LIB_HEADERS}/Conversion/MetalPasses.h
 		${LIB_HEADERS}/Conversion/FuncToFunc.h
@@ -33,11 +29,6 @@ add_mlir_dialect_library(MLIRMetal
 		${LIB_HEADERS}/IR/MetalTypes.h
 		IR/MetalTypes.cpp
 
-		# Target
-		${LIB_HEADERS}/Target/MetalShadingLanguage.h
-		Target/ConvertToMetalShadingLanguage.cpp
-		${LIB_HEADERS}/Target/ModuleTranslation.h
-		Target/ModuleTranslation.cpp
 
 		DEPENDS
 		MLIRMetalOpsIncGen

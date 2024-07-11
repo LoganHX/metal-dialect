@@ -26,15 +26,15 @@ void main() {
   size_t v20 = 1;
   for (size_t v21 = v18; v21 < v19; v21 += v20) {
     for (size_t v22 = v18; v22 < v19; v22 += v20) {
-      _MetalStore_float(v6, v21 * (1) + v22 * (1 * v5), v16);
-      _MetalStore_float(v10, v21 * (1) + v22 * (1 * v9), v17);
+      _MetalStore_float(v6, v22 * (1) + v21 * (1 * v5), v15);
+      _MetalStore_float(v10, v22 * (1) + v21 * (1 * v9), v17);
     };
   }
-  uint32_t v23 = 32;
-  intptr_t v24;
-  v24 = _MetalMatMul(v2, v6, v4, v5, v10, v8, v9, v14, v23);
-  _MetalCommandBufferCommit(v24);
-  _MetalCommandBufferWaitUntilCompleted(v24);
+  intptr_t v23;
+  v23 = _MetalMatMul(v2, v6, v4, v5, v10, v8, v9, v14, "float");
+  _MetalCommandBufferCommit(v23);
+  _MetalCommandBufferWaitUntilCompleted(v23);
+  _MetalRelease(v23);
   return;
 }
 

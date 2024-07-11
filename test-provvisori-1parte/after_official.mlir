@@ -11,11 +11,11 @@ module {
     %5 = "emitc.constant"() <{value = 1 : index}> : () -> index
     emitc.for %arg0 = %3 to %4 step %5 {
       emitc.for %arg1 = %3 to %4 step %5 {
-        memref.store %1, %alloc[%arg0, %arg1] : memref<4x4xf32>
+        memref.store %0, %alloc[%arg0, %arg1] : memref<4x4xf32>
         memref.store %2, %alloc_0[%arg0, %arg1] : memref<4x4xf32>
       }
     }
-    %6 = "metal.matmul"(%alloc, %alloc_0, %alloc_1) <{operandSegmentSizes = array<i32: 0, 1, 0, 0, 1, 0, 0, 1, 0>}> : (memref<4x4xf32>, memref<4x4xf32>, memref<4x4xf32>) -> index
+    %6 = "metal.matmul"(%alloc, %alloc_0, %alloc_1) <{elementType = f32, operandSegmentSizes = array<i32: 0, 1, 0, 0, 1, 0, 0, 1>}> : (memref<4x4xf32>, memref<4x4xf32>, memref<4x4xf32>) -> index
     return
   }
 }

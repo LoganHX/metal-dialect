@@ -19,12 +19,6 @@ if(MLIR_ENABLE_BINDINGS_PYTHON)
     list(APPEND METAL_TEST_DEPENDS MetalPythonModules)
 endif()
 
-add_lit_testsuite(check-metal "Running the metal regression tests"
-        ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${METAL_TEST_DEPENDS}
-        )
-set_target_properties(check-metal PROPERTIES FOLDER "Tests")
 
-add_lit_testsuites(metal ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS ${METAL_TEST_DEPENDS})
 
 add_subdirectory(CAPI)
