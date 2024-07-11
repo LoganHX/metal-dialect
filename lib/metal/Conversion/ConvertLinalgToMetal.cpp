@@ -15,6 +15,8 @@
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Tosa/IR/TosaOps.h"
+#include "shader/IR/ShaderOps.h"
+#include "shader/IR/ShaderDialect.h"
 
 #include "mlir/Transforms/DialectConversion.h"
 #include <iostream>
@@ -26,7 +28,7 @@ namespace mlir::metal {
 
 
 
-namespace {
+namespace mlir{
 struct ConvertLinalgToMetal
     : public impl::ConvertLinalgToMetalBase<ConvertLinalgToMetal> {
 
@@ -37,7 +39,8 @@ struct ConvertLinalgToMetal
     ConversionTarget target(getContext());
 
     target.addLegalDialect<emitc::EmitCDialect>();
-    target.addLegalDialect<MetalDialect>();
+    target.addLegalDialect<metal::MetalDialect>();
+    target.addLegalDialect<shader::ShaderDialect>();
     target.addLegalDialect<gpu::GPUDialect>();
     target.addLegalDialect<tosa::TosaDialect>();
     target.addLegalDialect<func::FuncDialect>();
@@ -47,7 +50,7 @@ struct ConvertLinalgToMetal
     target.addIllegalOp<linalg::MatmulOp>();
    
     RewritePatternSet patterns(&getContext());
-    mlir::metal::populateLinalgToMetalConversionPatterns(patterns,
+    metal::populateLinalgToMetalConversionPatterns(patterns,
                                                             &getContext());
 
     FrozenRewritePatternSet patternSet(std::move(patterns));

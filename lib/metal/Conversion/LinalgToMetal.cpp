@@ -61,8 +61,6 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
         getElementType(adaptor.getOperands()[2].getType()));
     rewriter.eraseOp(op);
 
-    rep.dump();
-
     return success();
   }
 };

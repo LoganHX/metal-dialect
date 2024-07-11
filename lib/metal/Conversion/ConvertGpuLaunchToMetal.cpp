@@ -17,6 +17,8 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Tosa/IR/TosaOps.h"
 #include "shader/IR/ShaderOps.h"
+#include "shader/IR/ShaderDialect.h"
+
 
 #include "mlir/Transforms/DialectConversion.h"
 #include <iostream>
@@ -118,7 +120,7 @@ bool isLoadOrStoreOpValid(Operation *op) {
   return false;
 };
 
-namespace {
+namespace mlir{
 struct ConvertGpuLaunchToMetal
     : public impl::ConvertGpuLaunchToMetalBase<ConvertGpuLaunchToMetal> {
 
@@ -129,7 +131,8 @@ struct ConvertGpuLaunchToMetal
     ConversionTarget target(getContext());
 
     target.addLegalDialect<emitc::EmitCDialect>();
-    target.addLegalDialect<MetalDialect>();
+    target.addLegalDialect<metal::MetalDialect>();
+    target.addLegalDialect<shader::ShaderDialect>();
     target.addLegalDialect<gpu::GPUDialect>();
     target.addLegalDialect<tosa::TosaDialect>();
     target.addLegalDialect<func::FuncDialect>();
@@ -166,7 +169,7 @@ struct ConvertGpuLaunchToMetal
         [](shader::MatmulOp op) { return !(op.getQueue() == nullptr); });
 
     RewritePatternSet patterns(&getContext());
-    mlir::metal::populateGpuLaunchToMetalConversionPatterns(patterns,
+    metal::populateGpuLaunchToMetalConversionPatterns(patterns,
                                                             &getContext());
 
     FrozenRewritePatternSet patternSet(std::move(patterns));
