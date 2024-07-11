@@ -37,8 +37,17 @@ bool isAllocatedBufferUsedByGPU(memref::AllocOp allocOp) {
           return true;
         }
       }
+    } //TODO Generalizzare per ogni operazione della classe shader
+    if (auto matmulOp = dyn_cast<shader::MatmulOp>(user)) { 
+      return true;
     }
-    if (auto matmulOp = dyn_cast<shader::MatmulOp>(user)) {
+    if (auto matmulOp = dyn_cast<shader::MatmulTransposeLeftOp>(user)) { 
+      return true;
+    }
+    if (auto matmulOp = dyn_cast<shader::MatmulTransposeRightOp>(user)) { 
+      return true;
+    }
+    if (auto matsumOp = dyn_cast<shader::MatsumOp>(user)) { 
       return true;
     }
   }
@@ -167,6 +176,12 @@ struct ConvertGpuLaunchToMetal
     //     [](func::ReturnOp op) { return doesReturnMemrefReturn(op); });
     target.addDynamicallyLegalOp<shader::MatmulOp>(
         [](shader::MatmulOp op) { return !(op.getQueue() == nullptr); });
+    target.addDynamicallyLegalOp<shader::MatmulTransposeLeftOp>(
+        [](shader::MatmulTransposeLeftOp op) { return !(op.getQueue() == nullptr); });
+    target.addDynamicallyLegalOp<shader::MatmulTransposeRightOp>(
+        [](shader::MatmulTransposeRightOp op) { return !(op.getQueue() == nullptr); });
+    target.addDynamicallyLegalOp<shader::MatsumOp>(
+        [](shader::MatsumOp op) { return !(op.getQueue() == nullptr); });
 
     RewritePatternSet patterns(&getContext());
     metal::populateGpuLaunchToMetalConversionPatterns(patterns,

@@ -312,6 +312,38 @@ struct LegalizeReturnOp : public OpConversionPattern<func::ReturnOp> {
   }
 };
 
+struct LegalizeMatsumOp : public OpConversionPattern<shader::MatsumOp> {
+  LegalizeMatsumOp(mlir::MLIRContext *context)
+      : OpConversionPattern<shader::MatsumOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(shader::MatsumOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+
+    auto rep = rewriter.create<mlir::shader::MatsumOp>(
+        op.getLoc(), rewriter.getIndexType(), getQueue(op),
+        adaptor.getOperands()[0],
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[1],
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[2], adaptor.getElementType());
+    rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(),
+                                                        rep.getResult());
+    rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(
+        op.getLoc(), rep.getResult());
+    rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), rep.getResult());
+
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
+
 struct LegalizeMatmulOp : public OpConversionPattern<shader::MatmulOp> {
   LegalizeMatmulOp(mlir::MLIRContext *context)
       : OpConversionPattern<shader::MatmulOp>(context) {}
@@ -330,8 +362,71 @@ struct LegalizeMatmulOp : public OpConversionPattern<shader::MatmulOp> {
         adaptor.getOperands()[1],
         adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
         adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
-        adaptor.getOperands()[2],
-        adaptor.getElementType());
+        adaptor.getOperands()[2], adaptor.getElementType());
+    rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(),
+                                                        rep.getResult());
+    rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(
+        op.getLoc(), rep.getResult());
+    rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), rep.getResult());
+
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
+struct LegalizeMatmulTransposeLeftOp
+    : public OpConversionPattern<shader::MatmulTransposeLeftOp> {
+  LegalizeMatmulTransposeLeftOp(mlir::MLIRContext *context)
+      : OpConversionPattern<shader::MatmulTransposeLeftOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(shader::MatmulTransposeLeftOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+
+    auto rep = rewriter.create<mlir::shader::MatmulTransposeLeftOp>(
+        op.getLoc(), rewriter.getIndexType(), getQueue(op),
+        adaptor.getOperands()[0],
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[1],
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[2], adaptor.getElementType());
+    rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(),
+                                                        rep.getResult());
+    rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(
+        op.getLoc(), rep.getResult());
+    rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(), rep.getResult());
+
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
+struct LegalizeMatmulTransposeRightOp
+    : public OpConversionPattern<shader::MatmulTransposeRightOp> {
+  LegalizeMatmulTransposeRightOp(mlir::MLIRContext *context)
+      : OpConversionPattern<shader::MatmulTransposeRightOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(shader::MatmulTransposeRightOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+
+    auto rep = rewriter.create<mlir::shader::MatmulTransposeRightOp>(
+        op.getLoc(), rewriter.getIndexType(), getQueue(op),
+        adaptor.getOperands()[0],
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[0].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[1],
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(2),
+        adaptor.getOperands()[1].getDefiningOp()->getOperand(3),
+        adaptor.getOperands()[2], adaptor.getElementType());
     rewriter.create<mlir::metal::CommandBufferCommitOp>(op.getLoc(),
                                                         rep.getResult());
     rewriter.create<mlir::metal::CommandBufferWaitUntilCompletedOp>(
@@ -349,7 +444,9 @@ struct LegalizeMatmulOp : public OpConversionPattern<shader::MatmulOp> {
 void mlir::metal::populateGpuLaunchToMetalConversionPatterns(
     RewritePatternSet &patterns, MLIRContext *ctx) {
 
-  patterns.insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
-                  ConvertDeallocOp, ConvertLoadOp, LegalizeReturnOp,
-                  LegalizeFuncOp, LegalizeMatmulOp, LegalizeCallOp>(ctx);
+  patterns
+      .insert<ConvertLaunchFuncOp, ConvertStoreOp, ConvertAllocOp,
+              ConvertDeallocOp, ConvertLoadOp, LegalizeReturnOp, LegalizeFuncOp,
+              LegalizeCallOp, LegalizeMatmulOp, LegalizeMatmulTransposeLeftOp,
+              LegalizeMatmulTransposeRightOp, LegalizeMatsumOp>(ctx);
 }

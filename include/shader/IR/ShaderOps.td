@@ -35,4 +35,61 @@ def MatmulOp : Shader_Op<"matmul", [AttrSizedOperandSegments]> {
 
 }
 
+//===----------------------------------------------------------------------===//
+// MatmulTransposeLeftOp
+//===----------------------------------------------------------------------===//
+
+def MatmulTransposeLeftOp : Shader_Op<"matmul_transpose_left", [AttrSizedOperandSegments]> {
+  let summary = "Matrix multiplication operation with left Matrix transposed";
+
+  let arguments = (ins Optional<Index>:$queue, 
+                      AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA,
+                      AnyType:$bufferB, Optional<Int_Type>:$rowsB, Optional<Int_Type>:$columnsB,
+                      AnyType:$bufferC,
+                      TypeAttr:$elementType);
+  
+  let results = (outs Index:$result);
+
+  let hasVerifier = 0; //TODO scrivere i verifiers
+
+}
+
+//===----------------------------------------------------------------------===//
+// MatmulTransposeLeftOp
+//===----------------------------------------------------------------------===//
+
+def MatmulTransposeRightOp : Shader_Op<"matmul_transpose_right", [AttrSizedOperandSegments]> {
+  let summary = "Matrix multiplication operation with right Matrix transposed";
+
+  let arguments = (ins Optional<Index>:$queue, 
+                      AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA,
+                      AnyType:$bufferB, Optional<Int_Type>:$rowsB, Optional<Int_Type>:$columnsB,
+                      AnyType:$bufferC,
+                      TypeAttr:$elementType);
+  
+  let results = (outs Index:$result);
+
+  let hasVerifier = 0; //TODO scrivere i verifiers
+
+}
+
+//===----------------------------------------------------------------------===//
+// MatsumOp
+//===----------------------------------------------------------------------===//
+
+def MatsumOp : Shader_Op<"matsum", [AttrSizedOperandSegments]> {
+  let summary = "Matrix multiplication operation";
+
+  let arguments = (ins Optional<Index>:$queue, 
+                      AnyType:$bufferA, Optional<Int_Type>:$rowsA, Optional<Int_Type>:$columnsA,
+                      AnyType:$bufferB, Optional<Int_Type>:$rowsB, Optional<Int_Type>:$columnsB,
+                      AnyType:$bufferC,
+                      TypeAttr:$elementType);
+  
+  let results = (outs Index:$result);
+
+  let hasVerifier = 0; //TODO scrivere i verifiers
+
+}
+
 #endif // SHADER_OPS

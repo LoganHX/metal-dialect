@@ -18,9 +18,9 @@ func.func @main() {
     }
   }
 
-  linalg.matmul ins(%A, %B : memref<4x4xf32>, memref<4x4xf32>) 
+  linalg.add ins(%A, %B : memref<4x4xf32>, memref<4x4xf32>) 
                 outs(%C : memref<4x4xf32>)
-
+  
   func.return
 }
 

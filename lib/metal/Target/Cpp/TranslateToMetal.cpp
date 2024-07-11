@@ -24,7 +24,6 @@
 #include "shader/IR/ShaderDialect.h"
 #include "shader/IR/ShaderOps.h"
 
-
 #include "metal/Target/Cpp/MetalEmitter.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/TransformOps/GPUTransformOps.h"
@@ -1215,38 +1214,62 @@ static LogicalResult printOperation(MetalEmitter &emitter,
   return success();
 }
 
-static LogicalResult printOperation(MetalEmitter &emitter, shader::MatmulOp op) {
-  if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(
-          op->getResult(0), "intptr_t")))
+static LogicalResult printMPS(MetalEmitter &emitter, OpResult result,
+                              Value queue, Value bufferA, Value rowsA,
+                              Value columnsA, Value bufferB, Value rowsB,
+                              Value columnsB, Value bufferC, Type elementType,
+                              const std::string &operationName) {
+  if (failed(emitter.emitKnownTypeVariableAssignmentAndDeclaration(result,
+                                                                   "intptr_t")))
     return failure();
 
   MetalEmitter::Scope scope(emitter);
   raw_indented_ostream &os = emitter.ostream();
 
-  os << "_MetalMatMul(";
-  os << emitter.getOrCreateName(op.getQueue());
+  os << operationName << "(";
+  os << emitter.getOrCreateName(queue);
   os << ", ";
-  os << emitter.getOrCreateName(op.getBufferA());
+  os << emitter.getOrCreateName(bufferA);
   os << ", ";
-  os << emitter.getOrCreateName(op.getRowsA());
+  os << emitter.getOrCreateName(rowsA);
   os << ", ";
-  os << emitter.getOrCreateName(op.getColumnsA());
+  os << emitter.getOrCreateName(columnsA);
   os << ", ";
-  os << emitter.getOrCreateName(op.getBufferB());
+  os << emitter.getOrCreateName(bufferB);
   os << ", ";
-  os << emitter.getOrCreateName(op.getRowsB());
+  os << emitter.getOrCreateName(rowsB);
   os << ", ";
-  os << emitter.getOrCreateName(op.getColumnsB());
+  os << emitter.getOrCreateName(columnsB);
   os << ", ";
-  os << emitter.getOrCreateName(op.getBufferC());
+  os << emitter.getOrCreateName(bufferC);
   os << ", ";
   os << "\"";
-  if(failed(emitter.emitType(op.getLoc(), op.getElementType())))
+  if (failed(emitter.emitType(bufferC.getLoc(), elementType)))
     return failure();
   os << "\"";
   os << ")";
 
-      return success();
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    shader::MatmulOp op) {
+  if (failed(printMPS(emitter, op->getResult(0), op.getQueue(), op.getBufferA(),
+                      op.getRowsA(), op.getColumnsA(), op.getBufferB(),
+                      op.getRowsB(), op.getColumnsB(), op.getBufferC(),
+                      op.getElementType(), "_MetalMatMul")))
+    return failure();
+  return success();
+}
+
+static LogicalResult printOperation(MetalEmitter &emitter,
+                                    shader::MatsumOp op) {
+  if (failed(printMPS(emitter, op->getResult(0), op.getQueue(), op.getBufferA(),
+                      op.getRowsA(), op.getColumnsA(), op.getBufferB(),
+                      op.getRowsB(), op.getColumnsB(), op.getBufferC(),
+                      op.getElementType(), "_MetalMatSum")))
+    return failure();
+  return success();
 }
 
 static LogicalResult printOperation(MetalEmitter &emitter,
@@ -2037,7 +2060,8 @@ LogicalResult MetalEmitter::emitOperation(Operation &op,
                 metal::CommandQueueMakeCommandBufferOp,
                 metal::CommandBufferWaitUntilCompletedOp, metal::ReleaseOp,
                 metal::StoreOp, metal::GetElementOp,
-                metal::CommandBufferAddBufferOp, shader::MatmulOp>(
+                metal::CommandBufferAddBufferOp, shader::MatmulOp,
+                shader::MatsumOp>(
               [&](auto op) { return printOperation(*this, op); })
           .Case<memref::DeallocOp, memref::StoreOp, memref::LoadOp,
                 memref::AllocOp>(

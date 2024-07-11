@@ -52,11 +52,71 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
   LogicalResult
   matchAndRewrite(linalg::MatmulOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    op.dump();
     auto rep = rewriter.create<mlir::shader::MatmulOp>(
-        op.getLoc(), rewriter.getIndexType(), nullptr, 
-        adaptor.getOperands()[0], nullptr, nullptr, 
-        adaptor.getOperands()[1], nullptr, nullptr,
+        op.getLoc(), rewriter.getIndexType(), nullptr, adaptor.getOperands()[0],
+        nullptr, nullptr, adaptor.getOperands()[1], nullptr, nullptr,
+        adaptor.getOperands()[2],
+        getElementType(adaptor.getOperands()[2].getType()));
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
+struct ConvertMatmulTransposeLeftOp
+    : public OpConversionPattern<linalg::MatmulTransposeAOp> {
+  ConvertMatmulTransposeLeftOp(mlir::MLIRContext *context)
+      : OpConversionPattern<linalg::MatmulTransposeAOp>(context) {}
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(linalg::MatmulTransposeAOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    auto rep = rewriter.create<mlir::shader::MatmulTransposeLeftOp>(
+        op.getLoc(), rewriter.getIndexType(), nullptr, adaptor.getOperands()[0],
+        nullptr, nullptr, adaptor.getOperands()[1], nullptr, nullptr,
+        adaptor.getOperands()[2],
+        getElementType(adaptor.getOperands()[2].getType()));
+    rep.dump();
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
+struct ConvertMatmulTransposeRightOp
+    : public OpConversionPattern<linalg::MatmulTransposeBOp> {
+  ConvertMatmulTransposeRightOp(mlir::MLIRContext *context)
+      : OpConversionPattern<linalg::MatmulTransposeBOp>(context) {}
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(linalg::MatmulTransposeBOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    op.dump();
+    auto rep = rewriter.create<mlir::shader::MatmulTransposeRightOp>(
+        op.getLoc(), rewriter.getIndexType(), nullptr, adaptor.getOperands()[0],
+        nullptr, nullptr, adaptor.getOperands()[1], nullptr, nullptr,
+        adaptor.getOperands()[2],
+        getElementType(adaptor.getOperands()[2].getType()));
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
+struct ConvertMatsumOp : public OpConversionPattern<linalg::AddOp> {
+  ConvertMatsumOp(mlir::MLIRContext *context)
+      : OpConversionPattern<linalg::AddOp>(context) {}
+
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(linalg::AddOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    auto rep = rewriter.create<mlir::shader::MatsumOp>(
+        op.getLoc(), rewriter.getIndexType(), nullptr, adaptor.getOperands()[0],
+        nullptr, nullptr, adaptor.getOperands()[1], nullptr, nullptr,
         adaptor.getOperands()[2],
         getElementType(adaptor.getOperands()[2].getType()));
     rewriter.eraseOp(op);
@@ -70,5 +130,6 @@ struct ConvertMatmulOp : public OpConversionPattern<linalg::MatmulOp> {
 void mlir::metal::populateLinalgToMetalConversionPatterns(
     RewritePatternSet &patterns, MLIRContext *ctx) {
 
-  patterns.insert<ConvertMatmulOp>(ctx);
+  patterns.insert<ConvertMatmulOp, ConvertMatmulTransposeLeftOp,
+                  ConvertMatmulTransposeRightOp, ConvertMatsumOp>(ctx);
 }

@@ -15,7 +15,7 @@ module {
         memref.store %2, %alloc_0[%arg0, %arg1] : memref<4x4xf32>
       }
     }
-    %6 = "shader.matmul"(%alloc, %alloc_0, %alloc_1) <{elementType = f32, operandSegmentSizes = array<i32: 0, 1, 0, 0, 1, 0, 0, 1>}> : (memref<4x4xf32>, memref<4x4xf32>, memref<4x4xf32>) -> index
+    %6 = "shader.matsum"(%alloc, %alloc_0, %alloc_1) <{elementType = f32, operandSegmentSizes = array<i32: 0, 1, 0, 0, 1, 0, 0, 1>}> : (memref<4x4xf32>, memref<4x4xf32>, memref<4x4xf32>) -> index
     return
   }
 }

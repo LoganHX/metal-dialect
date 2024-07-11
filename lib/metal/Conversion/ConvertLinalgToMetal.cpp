@@ -48,6 +48,9 @@ struct ConvertLinalgToMetal
     target.addLegalDialect<linalg::LinalgDialect>();
 
     target.addIllegalOp<linalg::MatmulOp>();
+    target.addIllegalOp<linalg::MatmulTransposeAOp>();
+    target.addIllegalOp<linalg::MatmulTransposeBOp>();
+    target.addIllegalOp<linalg::AddOp>();
    
     RewritePatternSet patterns(&getContext());
     metal::populateLinalgToMetalConversionPatterns(patterns,

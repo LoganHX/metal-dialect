@@ -26,7 +26,7 @@ module {
         metal.store %16, %9, %arg0, %arg1[%7, %8] : f32, index, index, index, i64, i64
       }
     }
-    %20 = "shader.matmul"(%1, %5, %3, %4, %9, %7, %8, %13) <{elementType = f32, operandSegmentSizes = array<i32: 1, 1, 1, 1, 1, 1, 1, 1>}> : (index, index, i64, i64, index, i64, i64, index) -> index
+    %20 = "shader.matsum"(%1, %5, %3, %4, %9, %7, %8, %13) <{elementType = f32, operandSegmentSizes = array<i32: 1, 1, 1, 1, 1, 1, 1, 1>}> : (index, index, i64, i64, index, i64, i64, index) -> index
     metal.command_buffer_commit %20 : index
     metal.command_buffer_wait_until_completed %20 : index
     metal.release %20 : index

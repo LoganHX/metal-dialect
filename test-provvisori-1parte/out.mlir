@@ -31,7 +31,7 @@ void main() {
     };
   }
   intptr_t v23;
-  v23 = _MetalMatMul(v2, v6, v4, v5, v10, v8, v9, v14, "float");
+  v23 = _MetalMatSum(v2, v6, v4, v5, v10, v8, v9, v14, "float");
   _MetalCommandBufferCommit(v23);
   _MetalCommandBufferWaitUntilCompleted(v23);
   _MetalRelease(v23);
