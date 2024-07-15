@@ -94,14 +94,14 @@ SmallVector<Value, 4> getMemrefDims(Operation *op,
   return dims;
 }
 
-struct ConvertDeallocOp : public OpConversionPattern<memref::DeallocOp> {
+struct ConvertDeallocOp : public OpConversionPattern<gpu::DeallocOp> {
   ConvertDeallocOp(mlir::MLIRContext *context)
-      : OpConversionPattern<memref::DeallocOp>(context) {}
+      : OpConversionPattern<gpu::DeallocOp>(context) {}
 
   using OpConversionPattern::OpConversionPattern;
 
   LogicalResult
-  matchAndRewrite(memref::DeallocOp op, OpAdaptor adaptor,
+  matchAndRewrite(gpu::DeallocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto rep = rewriter.create<mlir::metal::ReleaseOp>(op.getLoc(),
                                                        adaptor.getMemref());
@@ -167,14 +167,14 @@ struct ConvertStoreOp : public OpConversionPattern<memref::StoreOp> {
   }
 };
 
-struct ConvertAllocOp : public OpConversionPattern<memref::AllocOp> {
+struct ConvertAllocOp : public OpConversionPattern<gpu::AllocOp> {
   ConvertAllocOp(mlir::MLIRContext *context)
-      : OpConversionPattern<memref::AllocOp>(context) {}
+      : OpConversionPattern<gpu::AllocOp>(context) {}
 
   using OpConversionPattern::OpConversionPattern;
 
   LogicalResult
-  matchAndRewrite(memref::AllocOp op, OpAdaptor adaptor,
+  matchAndRewrite(gpu::AllocOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
     // isStorageModeManaged

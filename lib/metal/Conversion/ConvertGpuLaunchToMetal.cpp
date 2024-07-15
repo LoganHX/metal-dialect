@@ -28,103 +28,22 @@ namespace mlir::metal {
 #define GEN_PASS_DEF_CONVERTGPULAUNCHTOMETAL
 #include "metal/Conversion/MetalPasses.h.inc"
 
-bool isAllocatedBufferUsedByGPU(memref::AllocOp allocOp) {
-  for (auto *user : allocOp.getResult().getUsers()) {
-    if (auto launchOp = dyn_cast<gpu::LaunchFuncOp>(user)) {
-      launchOp.dump();
-      for (Value arg : launchOp.getKernelOperands()) {
-        if (arg == allocOp.getResult()) {
-          return true;
-        }
-      }
-    } //TODO Generalizzare per ogni operazione della classe shader
-    if (auto matmulOp = dyn_cast<shader::MatmulOp>(user)) { 
-      return true;
-    }
-    if (auto matmulOp = dyn_cast<shader::MatmulTransposeLeftOp>(user)) { 
-      return true;
-    }
-    if (auto matmulOp = dyn_cast<shader::MatmulTransposeRightOp>(user)) { 
-      return true;
-    }
-    if (auto matsumOp = dyn_cast<shader::MatsumOp>(user)) { 
-      return true;
-    }
-  }
-  return false;
-}
-bool isAllocatedByAllocOpAndUsedByGPU(Value value) {
+bool isAllocatedByGPU(Value value) {
   if (auto definingOp = value.getDefiningOp()) {
-    if (auto allocOp = dyn_cast<memref::AllocOp>(definingOp)) {
-      return isAllocatedBufferUsedByGPU(allocOp);
+    if (auto allocOp = dyn_cast<gpu::AllocOp>(definingOp)) {
+      return true;
     }
   }
   return false;
 };
 
-bool isDeallocatedBufferUsedByGPU(memref::DeallocOp deallocOp) {
-  Value buffer = deallocOp.getMemref();
-
-  for (auto *user : buffer.getUsers()) {
-    if (auto launchOp = dyn_cast<gpu::LaunchFuncOp>(user)) {
-      for (Value arg : launchOp.getKernelOperands()) {
-        if (arg == buffer) {
-          return true;
-        }
-      }
-    }
-  }
-  //TODO devo ricordami sta storia di matmul
-  return false;
-}
-
-bool isArgumentAProblematicMemref(Operation *op) {
-  if (auto callOp = dyn_cast<func::CallOp>(op)) {
-    for (auto operand : callOp.getOperands()) {
-      if (isa<MemRefType>(operand.getType())) {
-        bool value = isAllocatedByAllocOpAndUsedByGPU(operand);
-        if(value) return true;
-      }
-    }
-  }
-  return false;
-}
-
-
-bool doesReturnMemrefFunc(Operation *op) {
-  if (auto funcOp = dyn_cast<func::FuncOp>(op)) {
-    if (funcOp.getResultTypes().size() == 0)
-      return false;
-    for (int i = 0; i < (int)funcOp.getResultTypes().size(); i++) {
-      if (isa<MemRefType>(funcOp.getResultTypes()[0])) {
-        return true;
-      }
-    }
-    return false;
-  }
-  return false;
-}
-
-bool doesReturnMemrefReturn(Operation *op) {
-  if (auto returnOp = dyn_cast<func::ReturnOp>(op)) {
-    if (returnOp.getOperands().size() == 0)
-      return false;
-    for (int i = 0; i < (int)returnOp.getOperands().size(); i++) {
-      if (isa<MemRefType>(returnOp.getOperand(i).getType())) {
-        return true;
-      }
-    }
-    return false;
-  }
-  return false;
-}
 
 bool isLoadOrStoreOpValid(Operation *op) {
   if (auto loadOp = dyn_cast<memref::LoadOp>(op)) {
-    return isAllocatedByAllocOpAndUsedByGPU(loadOp.getMemRef());
+    return isAllocatedByGPU(loadOp.getMemRef());
   }
   if (auto storeOp = dyn_cast<memref::StoreOp>(op)) {
-    return isAllocatedByAllocOpAndUsedByGPU(storeOp.getMemRef());
+    return isAllocatedByGPU(storeOp.getMemRef());
   }
   return false;
 };
@@ -152,28 +71,19 @@ struct ConvertGpuLaunchToMetal
 
     target.addIllegalOp<memref::StoreOp>();
     target.addIllegalOp<memref::LoadOp>();
-    target.addIllegalOp<memref::AllocOp>();
-    target.addIllegalOp<memref::DeallocOp>();
+    target.addIllegalOp<gpu::AllocOp>();
+    target.addIllegalOp<gpu::DeallocOp>();
+
 
     target.addLegalDialect<bufferization::BufferizationDialect>();
 
-    target.addDynamicallyLegalOp<memref::AllocOp>(
-        [](memref::AllocOp op) { return !isAllocatedBufferUsedByGPU(op); });
-    target.addDynamicallyLegalOp<memref::DeallocOp>(
-        [](memref::DeallocOp op) { return !isDeallocatedBufferUsedByGPU(op); });
+
 
     target.addDynamicallyLegalOp<memref::LoadOp>(
         [](memref::LoadOp op) { return !isLoadOrStoreOpValid(op); });
     target.addDynamicallyLegalOp<memref::StoreOp>(
         [](memref::StoreOp op) { return !isLoadOrStoreOpValid(op); });
     
-    target.addDynamicallyLegalOp<func::CallOp>(
-        [](func::CallOp op) { return !isArgumentAProblematicMemref(op); });
-
-    // target.addDynamicallyLegalOp<func::FuncOp>(
-    //     [](func::FuncOp op) { return doesReturnMemrefFunc(op); });
-    // target.addDynamicallyLegalOp<func::ReturnOp>(
-    //     [](func::ReturnOp op) { return doesReturnMemrefReturn(op); });
     target.addDynamicallyLegalOp<shader::MatmulOp>(
         [](shader::MatmulOp op) { return !(op.getQueue() == nullptr); });
     target.addDynamicallyLegalOp<shader::MatmulTransposeLeftOp>(
