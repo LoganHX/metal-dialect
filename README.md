@@ -6,7 +6,7 @@ Install the following dependencies:
 - Make
 
 ## Getting Started
-- To build the LLVM project, and this, run:
+- To build the LLVM project, and this project, run:
 ```
 make all
 ```
